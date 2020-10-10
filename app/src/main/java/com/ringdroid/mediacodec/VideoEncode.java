@@ -90,7 +90,7 @@ public class VideoEncode {
         this.startTime = startTime;
         this.endTime = endTime;
         audioInit = false;
-        String path = Environment.getExternalStorageDirectory().getAbsolutePath() +"/HMSDK/video/VideoEdit.mp4";
+        String path = Environment.getExternalStorageDirectory().getAbsolutePath() +"/VideoEditor/VideoEdit.mp4";
 
         File f = new File(path);
         if(f.exists()){

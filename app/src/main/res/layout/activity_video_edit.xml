@@ -9,11 +9,13 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
+
         <RelativeLayout
             android:id="@+id/video_view"
             android:layout_width="match_parent"
-            android:layout_height="300dp">
+            android:layout_height="200dp">
         </RelativeLayout>
+
         <TextView
             android:id="@+id/info"
             android:nextFocusUp="@+id/endmarker"
@@ -22,6 +24,7 @@
             android:layout_height="wrap_content"
             style="@style/AudioFileInfoOverlayText"
             android:gravity="center" />
+
         <RelativeLayout
             android:layout_width="wrap_content"
             android:layout_height="100dp">
@@ -35,8 +38,8 @@
 
             <com.ringdroid.view.WaveformView
                 android:id="@+id/waveform"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent" />
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
 
             <com.ringdroid.view.MarkerView
                 android:id="@+id/startmarker"
@@ -59,37 +62,37 @@
 
         <LinearLayout
             style="@style/ToolbarBackground"
-            android:layout_width="fill_parent"
-            android:layout_height="62dip"
+            android:layout_width="match_parent"
+            android:layout_height="62dp"
             android:gravity="center" >
 
             <ImageButton
                 android:id="@+id/rew"
-                android:layout_width="64dip"
-                android:layout_height="52dip"
-                android:layout_marginTop="6dip"
-                android:layout_marginBottom="6dip"
+                android:layout_width="64dp"
+                android:layout_height="52dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="6dp"
                 style="@android:style/MediaButton"
                 android:contentDescription="@string/rewind"
                 android:src="@android:drawable/ic_media_previous" />
 
             <ImageButton
                 android:id="@+id/play"
-                android:layout_width="71dip"
-                android:layout_height="52dip"
-                android:layout_marginTop="6dip"
-                android:layout_marginBottom="6dip"
+                android:layout_width="71dp"
+                android:layout_height="52dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="6dp"
                 style="@android:style/MediaButton"
                 android:contentDescription="@string/play"
                 android:src="@android:drawable/ic_media_play" />
 
             <ImageButton
                 android:id="@+id/ffwd"
-                android:layout_width="64dip"
-                android:layout_height="52dip"
-                android:layout_marginRight="5dip"
-                android:layout_marginTop="6dip"
-                android:layout_marginBottom="6dip"
+                android:layout_width="64dp"
+                android:layout_height="52dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="6dp"
                 style="@android:style/MediaButton"
                 android:contentDescription="@string/ffwd"
                 android:src="@android:drawable/ic_media_next" />
@@ -97,12 +100,13 @@
         </LinearLayout>
 
         <LinearLayout style="@style/HorizontalDividerTop" />
+
         <LinearLayout style="@style/HorizontalDividerBottom" />
 
         <LinearLayout
             style="@style/ToolbarBackground"
-            android:layout_width="fill_parent"
-            android:layout_height="62dip"
+            android:layout_width="match_parent"
+            android:layout_height="62dp"
             android:gravity="center"
             android:orientation="horizontal">
 
@@ -116,17 +120,17 @@
                 android:clickable="true"
                 android:gravity="center"
                 android:layout_width="wrap_content"
-                android:layout_height="31dip" />
+                android:layout_height="31dp" />
 
             <TextView
                 android:id="@+id/starttext"
                 android:textColor="#ffffffff"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                android:layout_marginLeft="10dip"
-                android:layout_marginRight="30dip"
-                android:layout_width="70dip"
-                android:layout_height="31dip"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="30dp"
+                android:layout_width="70dp"
+                android:layout_height="31dp"
                 android:gravity="center" />
 
             <TextView
@@ -139,19 +143,20 @@
                 android:clickable="true"
                 android:gravity="center"
                 android:layout_width="wrap_content"
-                android:layout_height="31dip" />
+                android:layout_height="31dp" />
 
             <TextView
                 android:id="@+id/endtext"
                 android:textColor="#ffffffff"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                android:layout_width="70dip"
-                android:layout_height="31dip"
-                android:layout_marginLeft="10dip"
+                android:layout_width="70dp"
+                android:layout_height="31dp"
+                android:layout_marginLeft="10dp"
                 android:gravity="center" />
 
         </LinearLayout>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="40dp"
@@ -163,10 +168,8 @@
             android:layout_marginTop="20dp"
             android:gravity="center"
             android:background="@drawable/radius_confirm"
-            android:onClick="onConfirm"
-            />
+            android:onClick="onConfirm" />
 
     </LinearLayout>
-
 
 </android.support.constraint.ConstraintLayout>
