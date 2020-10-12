@@ -7,7 +7,6 @@ import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.Message;
 import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -19,7 +18,6 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -43,7 +41,7 @@ import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 import com.ringdroid.testvideoedit.R;
-import com.ringdroid.util.ThreadUtil;
+import com.ringdroid.util.VideoTrimmerUtil;
 import com.ringdroid.view.CutView;
 import com.ringdroid.view.MarkerView;
 import com.ringdroid.view.WaveformView;
@@ -89,8 +87,6 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
     private int mTouchInitialEndPos;
     private long mWaveformTouchStartMsec;
     private float mDensity;
-    private int mWidthPixels;
-    private int mHeightPixels;
     private int mMarkerLeftInset;
     private int mMarkerRightInset;
     private int mMarkerTopOffset;
@@ -105,8 +101,6 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
     private RelativeLayout videoView;
     private CutView cutView;
 
-//    private ExecutorService fixedThreadPool = Executors.newFixedThreadPool(1);
-    private Handler videoHandler;
     private HandlerThread videoThread;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,13 +108,13 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         setContentView(R.layout.activity_video_edit);
         videoThread = new HandlerThread("VideoExtractor");
         videoThread.start();
-        videoHandler = new Handler(videoThread.getLooper());
         mIsPlaying = false;
 
         playerHandler = new Handler();
+        mFilename = getIntent().getStringExtra("video_path");
 
 //        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/1/[Mabors-Sub][Youjo Senki][Movie][1080P][GB][BDrip][AVC AAC YUV420P8].mp4";
-        mFilename = "/storage/emulated/0/qqmusic/mv/儿歌-小手拍拍.mp4";
+//        mFilename = "/storage/emulated/0/qqmusic/mv/儿歌-小手拍拍.mp4";
 //        mFilename = "/storage/emulated/0/Movies/ScreenCaptures/Screen-20200804-150019-360x480.mp4";
         mKeyDown = false;
 
@@ -131,13 +125,10 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         mHandler.postDelayed(mTimerRunnable, 100);
     }
 
-
     private void loadGui() {
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
         mDensity = metrics.density;
-        mWidthPixels = metrics.widthPixels;
-        mHeightPixels = (int) getResources().getDimension(R.dimen.dp300);
 
         mMarkerLeftInset = (int)(46 * mDensity);
         mMarkerRightInset = (int)(48 * mDensity);
@@ -209,9 +200,42 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
             player.prepare(videoSource);
             addListener();
         }
-        Message message = mPlayerHandler.obtainMessage();
-        message.what = 100;
-        mPlayerHandler.sendMessageDelayed(message,100);
+        mHandler.postDelayed(mPlayerHandler, 100);
+
+        videoView.post(new Runnable() {
+            @Override
+            public void run() {
+                RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+
+                playerView = new TextureView(VideoEditActivity.this);
+                playerView.setKeepScreenOn(true);
+                playerView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
+                    @Override
+                    public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+                        mSurface = new Surface(surface);
+                        player.setVideoSurface(mSurface);
+                    }
+
+                    @Override
+                    public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+
+                    }
+
+                    @Override
+                    public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+                        return false;
+                    }
+
+                    @Override
+                    public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+
+                    }
+                });
+                videoView.addView(playerView,p);
+                cutView = new CutView(VideoEditActivity.this);
+                videoView.addView(cutView,p);
+            }
+        });
     }
 
     private String TAG = "exoplayer";
@@ -364,81 +388,6 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
 
     }
 
-    private Handler mPlayerHandler = new Handler(){
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            if(player != null && player.getDuration() > 0 && player.getVideoFormat() != null && !isPause){
-
-                finishOpeningSoundFile();
-                String mCaption = "0.00 seconds "+formatTime(mMaxPos) + " " +
-                        "seconds";
-                info.setText(mCaption);
-
-                int videoWidth = player.getVideoFormat().width;
-                int videoHeight = player.getVideoFormat().height;
-
-                int screenWidth = mWidthPixels;
-                int screenHeight = mHeightPixels;
-
-                int left,top,viewWidth,viewHeight;
-                float sh = screenWidth*1.0f/screenHeight;
-                float vh = videoWidth *1.0f/ videoHeight;
-                if(sh < vh){
-                    left = 0;
-                    viewWidth = screenWidth;
-                    viewHeight = (int)(videoHeight *1.0f/ videoWidth *viewWidth);
-                    top = (screenHeight - viewHeight)/2;
-                }else{
-                    top = 0;
-                    viewHeight = screenHeight;
-                    viewWidth = (int)(videoWidth *1.0f/ videoHeight *viewHeight);
-                    left = (screenWidth - viewWidth)/2;
-                }
-
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(viewWidth,viewHeight);
-                params.leftMargin = left;
-                params.topMargin = top;
-                params.bottomMargin = mHeightPixels - top - viewHeight;
-                videoView.setLayoutParams(params);
-
-                RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-
-                playerView = new TextureView(VideoEditActivity.this);
-                playerView.setKeepScreenOn(true);
-                playerView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
-                    @Override
-                    public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-                        mSurface = new Surface(surface);
-                        player.setVideoSurface(mSurface);
-                    }
-
-                    @Override
-                    public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-
-                    }
-
-                    @Override
-                    public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-                        return false;
-                    }
-
-                    @Override
-                    public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-
-                    }
-                });
-                videoView.addView(playerView,p);
-                cutView = new CutView(VideoEditActivity.this);
-                videoView.addView(cutView,p);
-            }else{
-                Message message = mPlayerHandler.obtainMessage();
-                message.what = 100;
-                mPlayerHandler.sendMessageDelayed(message,100);
-            }
-        }
-    };
-
     private boolean isPause = false;
     @Override
     protected void onPause() {
@@ -473,18 +422,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         if(mSurface != null){
             mSurface.release();
         }
-        videoHandler.post(new Runnable() {
-            @Override
-            public void run() {
-//                if(videoExtractor != null){
-//                    videoExtractor.stop();
-//                    videoExtractor.release();
-//                }
-                videoThread.quit();
-            }
-        });
-        mPlayerHandler.removeMessages(100);
-//        fixedThreadPool.shutdown();
+        mHandler.removeCallbacks(mPlayerHandler);
         mWaveformView.release();
         super.onDestroy();
     }
@@ -565,26 +503,9 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         mOffsetGoal = mOffset;
         updateDisplay();
     }
-    private boolean isImageLoad = false;
+
     @Override
     public void waveformImage(final int loadSecs) {
-//        if(isPause){
-//          return;
-//        }
-//        if(!isImageLoad){
-//            isImageLoad = true;
-//            videoHandler.post(new Runnable() {
-//                @Override
-//                public void run() {
-////                    int begin = loadSecs*1000;
-////                    SparseArray<Bitmap> bitmaps = mWaveformView.getBitmaps();
-////                    if(bitmaps != null && bitmaps.get(begin) == null){
-////                        bitmaps.put(begin, bitmap);
-////                    }
-////                    mWaveformView.postInvalidate();
-//                }
-//            });
-//        }
     }
     //
     // MarkerListener
@@ -842,6 +763,20 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
                 -mStartMarker.getHeight());
         mEndMarker.setLayoutParams(params);
     }
+
+    private Runnable mPlayerHandler = new Runnable(){
+        @Override
+        public void run() {
+            if(player != null && player.getDuration() > 0 && player.getVideoFormat() != null && !isPause){
+                finishOpeningSoundFile();
+                String mCaption = "0.00 seconds "+formatTime(mMaxPos) + " " +
+                        "seconds";
+                info.setText(mCaption);
+            }else{
+                mHandler.postDelayed(mPlayerHandler, 100);
+            }
+        }
+    };
 
     private Runnable mTimerRunnable = new Runnable() {
         public void run() {

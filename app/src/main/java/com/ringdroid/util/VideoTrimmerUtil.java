@@ -1,4 +1,4 @@
-package com.ringdroid.activity;
+package com.ringdroid.util;
 
 import android.app.Activity;
 import android.content.Context;
@@ -8,10 +8,7 @@ import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.ringdroid.util.ThreadUtil;
-
 import java.lang.ref.WeakReference;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Author：J.Chou
