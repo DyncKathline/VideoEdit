@@ -1,17 +1,14 @@
 package com.ringdroid.activity;
 
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Rect;
-import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
-import android.media.MediaMetadataRetriever;
+import android.media.MediaPlayer;
+import android.media.session.PlaybackState;
 import android.net.Uri;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
-import android.renderscript.ScriptIntrinsicYuvToRGB;
+import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -27,34 +24,32 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayerFactory;
-import com.google.android.exoplayer2.Format;
+import com.google.android.exoplayer2.PlaybackParameters;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
-import com.google.android.exoplayer2.decoder.DecoderCounters;
+import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
-import com.google.android.exoplayer2.video.VideoRendererEventListener;
-import com.ringdroid.mediacodec.VideoEncode;
-import com.ringdroid.mediacodec.VideoExtractor;
 import com.ringdroid.testvideoedit.R;
+import com.ringdroid.util.ThreadUtil;
 import com.ringdroid.view.CutView;
 import com.ringdroid.view.MarkerView;
 import com.ringdroid.view.WaveformView;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class VideoEditActivity extends AppCompatActivity implements MarkerView.MarkerListener,
         WaveformView.WaveformListener{
@@ -111,8 +106,6 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
     private CutView cutView;
 
 //    private ExecutorService fixedThreadPool = Executors.newFixedThreadPool(1);
-
-    private VideoExtractor videoExtractor;
     private Handler videoHandler;
     private HandlerThread videoThread;
     @Override
@@ -128,160 +121,13 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
 
 //        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/1/[Mabors-Sub][Youjo Senki][Movie][1080P][GB][BDrip][AVC AAC YUV420P8].mp4";
         mFilename = "/storage/emulated/0/qqmusic/mv/儿歌-小手拍拍.mp4";
-//        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath()+"/DCIM/Camera/0c397c359aa7468e431f59a375a63f29.mp4";
+//        mFilename = "/storage/emulated/0/Movies/ScreenCaptures/Screen-20200804-150019-360x480.mp4";
         mKeyDown = false;
 
         mHandler = new Handler();
 
         loadGui();
 
-//        videoEncode = new VideoEncode();
-//        videoEncode.setEncoderListener(new VideoEncode.OnEncoderListener() {
-//            @Override
-//            public void onStart() {
-//                runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//
-//                    }
-//                });
-//            }
-//
-//            @Override
-//            public void onStop() {
-//                runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//
-//                    }
-//                });
-//            }
-//        });
-//        videoEncode.init(mFilename);
-
-//        fixedThreadPool.execute(new Runnable() {
-//            @Override
-//            public void run() {
-//                final VideoExtractor videoExtractor = new VideoExtractor(VideoEditActivity.this,mFilename);
-//                long d;
-//                if(videoExtractor.getDuration()<= 20000){
-//                    d = videoExtractor.getDuration();
-//                }else{
-//                    d = videoExtractor.getDuration()/4;
-//                }
-//                videoExtractor.encoder(0, d, 1,50,50, new VideoExtractor.OnEncodeListener() {
-//                    @Override
-//                    public void onBitmap(int time, Bitmap bitmap) {
-//                        if(fixedThreadPool.isShutdown()){
-//                            videoExtractor.stop();
-//                        }else{
-//                            SparseArray<Bitmap> bitmaps = mWaveformView.getBitmaps();
-//                            if(bitmaps != null){
-//                                bitmaps.put(time,bitmap);
-//                            }
-//                            mWaveformView.postInvalidate();
-//                        }
-//
-//                    }
-//                });
-//            }
-//        });
-//        fixedThreadPool.execute(new Runnable() {
-//            @Override
-//            public void run() {
-//                final VideoExtractor videoExtractor = new VideoExtractor(VideoEditActivity.this,mFilename);
-//                if(videoExtractor.getDuration() <= 20000){
-//                    return;
-//                }
-//                long d = videoExtractor.getDuration()/4;
-//                videoExtractor.encoder(d+1000, d*2 , 1,50,50, new VideoExtractor.OnEncodeListener() {
-//                    @Override
-//                    public void onBitmap(int time, Bitmap bitmap) {
-//                        if(fixedThreadPool.isShutdown()){
-//                            videoExtractor.stop();
-//                        }else{
-//                            SparseArray<Bitmap> bitmaps = mWaveformView.getBitmaps();
-//                            if(bitmaps != null){
-//                                bitmaps.put(time,bitmap);
-//                            }
-//                            mWaveformView.postInvalidate();
-//                        }
-//
-//                    }
-//                });
-//            }
-//        });
-//        fixedThreadPool.execute(new Runnable() {
-//            @Override
-//            public void run() {
-//                final VideoExtractor videoExtractor = new VideoExtractor(VideoEditActivity.this,mFilename);
-//                if(videoExtractor.getDuration() <= 20000){
-//                    return;
-//                }
-//                long d = videoExtractor.getDuration()/4;
-//                long start = 2*d;
-//
-//                videoExtractor.encoder(start+1000, start + d , 1,50,50, new VideoExtractor.OnEncodeListener() {
-//                    @Override
-//                    public void onBitmap(int time, Bitmap bitmap) {
-//                        if(fixedThreadPool.isShutdown()){
-//                            videoExtractor.stop();
-//                        }else{
-//                            SparseArray<Bitmap> bitmaps = mWaveformView.getBitmaps();
-//                            if(bitmaps != null){
-//                                bitmaps.put(time,bitmap);
-//                            }
-//                            mWaveformView.postInvalidate();
-//                        }
-//
-//                    }
-//                });
-//            }
-//        });
-//        fixedThreadPool.execute(new Runnable() {
-//            @Override
-//            public void run() {
-//                final VideoExtractor videoExtractor = new VideoExtractor(VideoEditActivity.this,mFilename);
-//                if(videoExtractor.getDuration()<= 20000){
-//                    return;
-//                }
-//                long d = videoExtractor.getDuration()/4;
-//                long start = 3*d;
-//                videoExtractor.encoder(start+1000, videoExtractor.getDuration() , 1,50,50, new VideoExtractor.OnEncodeListener() {
-//                    @Override
-//                    public void onBitmap(int time, Bitmap bitmap) {
-//                        if(fixedThreadPool.isShutdown()){
-//                            videoExtractor.stop();
-//                        }else{
-//                            SparseArray<Bitmap> bitmaps = mWaveformView.getBitmaps();
-//                            if(bitmaps != null){
-//                                bitmaps.put(time,bitmap);
-//                            }
-//                            mWaveformView.postInvalidate();
-//                        }
-//
-//                    }
-//                });
-//            }
-//        });
-        videoExtractor = new VideoExtractor(this,mFilename);
-        videoExtractor.setOnEncodeListener(new VideoExtractor.OnEncodeListener() {
-            @Override
-            public void onBitmap(int time, Bitmap bitmap) {
-                isImageLoad = false;
-                if(isPause){
-                    videoExtractor.stop();
-                }else{
-                    if(time >= 0){
-                        SparseArray<Bitmap> bitmaps = mWaveformView.getBitmaps();
-                        if(bitmaps != null && bitmaps.get(time) == null){
-                            bitmaps.put(time,bitmap);
-                        }
-                        mWaveformView.postInvalidate();
-                    }
-                }
-            }
-        });
         mHandler.postDelayed(mTimerRunnable, 100);
     }
 
@@ -361,14 +207,162 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
 
             MediaSource videoSource = new ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(url, playerHandler,null);
             player.prepare(videoSource);
+            addListener();
         }
         Message message = mPlayerHandler.obtainMessage();
         message.what = 100;
         mPlayerHandler.sendMessageDelayed(message,100);
+    }
+
+    private String TAG = "exoplayer";
+    private int lastReportedPlaybackState;
+    private boolean lastReportedPlayWhenReady;
+    private boolean isPrepareing = true;
+    private boolean misBuffering = false;
+    private boolean isLooping = false;
+    private void addListener() {
+        player.addListener(new Player.EventListener() {
+            @Override
+            public void onTimelineChanged(Timeline timeline, Object manifest, int reason) {
+
+            }
+
+            @Override
+            public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
+
+            }
+
+            @Override
+            public void onLoadingChanged(boolean isLoading) {
+
+            }
+
+            @Override
+            public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+                //重新播放状态顺序为：STATE_IDLE -》STATE_BUFFERING -》STATE_READY
+                //缓冲时顺序为：STATE_BUFFERING -》STATE_READY
+                Log.e(TAG, "onPlayerStateChanged: playWhenReady = " + playWhenReady + ", playbackState = " + playbackState);
+                if (lastReportedPlayWhenReady != playWhenReady || lastReportedPlaybackState != playbackState) {
+                    if (misBuffering) {
+                        switch (playbackState) {
+                            case Player.STATE_ENDED:
+                            case Player.STATE_READY:
+                                notifyOnInfo(MediaPlayer.MEDIA_INFO_BUFFERING_END, player.getBufferedPercentage());
+                                misBuffering = false;
+                                break;
+                        }
+                    }
+
+                    if (isPrepareing) {
+                        switch (playbackState) {
+                            case Player.STATE_READY:
+                                notifyOnPrepared();
+                                isPrepareing = false;
+                                break;
+                        }
+                    }
+
+                    if(playbackState == PlaybackState.STATE_PLAYING) {
+//            long bufferedPosition = mInternalPlayer.getBufferedPosition() / 1000;
+//            long totalPosition = mInternalPlayer.getContentPosition() / 1000;
+                        notifyOnBufferingUpdate(player.getBufferedPercentage());
+                    }
+
+                    switch (playbackState) {
+                        case Player.STATE_BUFFERING:
+                            notifyOnInfo(MediaPlayer.MEDIA_INFO_BUFFERING_START, player.getBufferedPercentage());
+                            misBuffering = true;
+                            break;
+                        case Player.STATE_READY:
+                            break;
+                        case Player.STATE_ENDED:
+                            notifyOnCompletion();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                lastReportedPlayWhenReady = playWhenReady;
+                lastReportedPlaybackState = playbackState;
+            }
+
+            @Override
+            public void onRepeatModeChanged(int repeatMode) {
+
+            }
+
+            @Override
+            public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {
+
+            }
+
+            @Override
+            public void onPlayerError(ExoPlaybackException error) {
+
+            }
+
+            @Override
+            public void onPositionDiscontinuity(int reason) {
+
+            }
+
+            @Override
+            public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
+
+            }
+
+            @Override
+            public void onSeekProcessed() {
+
+            }
+        });
+    }
+
+    private void notifyOnCompletion() {
 
     }
 
+    private void notifyOnBufferingUpdate(int bufferedPercentage) {
 
+    }
+
+    private void notifyOnPrepared() {
+        long duration = player.getDuration();
+        Log.i(TAG, "duration: " + duration);
+        Uri videoUri = Uri.parse(mFilename);
+        long startPosition = 0;
+        long endPosition = duration;
+        int interval = 1000;// 1秒
+        final SparseArray<Bitmap> bitmaps = mWaveformView.getBitmaps();
+        lastConnectTime = SystemClock.elapsedRealtime();
+        VideoTrimmerUtil.shootVideoThumbInBackground(this, videoUri, interval, startPosition, endPosition,
+                new VideoTrimmerUtil.SingleCallback<Bitmap, Integer>() {
+                    @Override
+                    public void onSingleCallback(final Bitmap bitmap, final Integer interval) {
+                        if (bitmap != null) {
+                            if(bitmaps != null){
+                                bitmaps.put(interval, bitmap);
+                            }
+                            Log.i(TAG, "interval: "+interval+", bitmaps.size: " + bitmaps.size());
+                            updateThumbnail();
+                        }
+                    }
+                });
+    }
+
+    int REFRESH_TIME = 500;
+    long lastConnectTime;
+    private void updateThumbnail() {
+        long time = SystemClock.elapsedRealtime();
+        if (time - lastConnectTime > REFRESH_TIME) {
+            lastConnectTime = time;
+            mWaveformView.postInvalidate();
+        }
+    }
+
+    private void notifyOnInfo(int mediaInfoBufferingEnd, int bufferedPercentage) {
+
+    }
 
     private Handler mPlayerHandler = new Handler(){
         @Override
@@ -482,10 +476,10 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         videoHandler.post(new Runnable() {
             @Override
             public void run() {
-                if(videoExtractor != null){
-                    videoExtractor.stop();
-                    videoExtractor.release();
-                }
+//                if(videoExtractor != null){
+//                    videoExtractor.stop();
+//                    videoExtractor.release();
+//                }
                 videoThread.quit();
             }
         });
@@ -574,26 +568,23 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
     private boolean isImageLoad = false;
     @Override
     public void waveformImage(final int loadSecs) {
-        if(isPause){
-          return;
-        }
-        if(!isImageLoad){
-            isImageLoad = true;
-            videoHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    long begin = loadSecs*1000;
-                    videoExtractor.encoder(begin);
-                }
-            });
-//            fixedThreadPool.execute(new Runnable() {
+//        if(isPause){
+//          return;
+//        }
+//        if(!isImageLoad){
+//            isImageLoad = true;
+//            videoHandler.post(new Runnable() {
 //                @Override
 //                public void run() {
-//                    long begin = loadSecs*1000;
-//                    videoExtractor.encoder(begin);
+////                    int begin = loadSecs*1000;
+////                    SparseArray<Bitmap> bitmaps = mWaveformView.getBitmaps();
+////                    if(bitmaps != null && bitmaps.get(begin) == null){
+////                        bitmaps.put(begin, bitmap);
+////                    }
+////                    mWaveformView.postInvalidate();
 //                }
 //            });
-        }
+//        }
     }
     //
     // MarkerListener
@@ -1086,24 +1077,9 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
             Toast.makeText(this,"时长不能小于5秒",Toast.LENGTH_SHORT).show();
             return;
         }
-        final VideoEncode videoEncode = new VideoEncode();
-        videoEncode.setEncoderListener(new VideoEncode.OnEncoderListener() {
-            @Override
-            public void onStart() {
-                Log.d("============","onStart");
-            }
+        //展示裁剪进度回调
+        //todo
 
-            @Override
-            public void onStop() {
-                Log.d("============","onStop");
-                videoEncode.release();
-            }
-
-            @Override
-            public void onProgress(int progress) {
-                Log.d("============","onProgress = "+progress);
-            }
-        });
         float[] cutArr = cutView.getCutArr();
         float left = cutArr[0];
         float top = cutArr[1];
@@ -1140,10 +1116,11 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
                 r, t,
                 f, t
         };
-        videoEncode.init(mFilename,
-                vst,
-                vse,
-                cropWidth,cropHeight,textureVertexData);
+        //进行裁剪逻辑
+//        videoEncode.init(mFilename,
+//                vst,
+//                vse,
+//                cropWidth,cropHeight,textureVertexData);
     }
 
 }

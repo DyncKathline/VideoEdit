@@ -352,9 +352,6 @@ public class WaveformView extends View {
         canvas.drawLine(x, y0, x, y1, paint);
     }
 
-
-
-
     private Rect src = new Rect(0,0,50,50);
     private RectF dst = new RectF();
     private int imageSecs = -1;
@@ -483,11 +480,6 @@ public class WaveformView extends View {
                     }
                 }
             }
-        }
-        bitmaps.clear();
-        for (int k = 0; k < removeBitmaps.size(); k++){
-            int key = removeBitmaps.keyAt(k);
-            bitmaps.put(key,removeBitmaps.get(key));
         }
         removeBitmaps.clear();
         postDelayed(new Runnable() {

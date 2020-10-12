@@ -9,6 +9,8 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.PermissionChecker;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -79,15 +81,24 @@ public class GuideActivity extends Activity {
     private void init(){
 
         ImageView imageView = findViewById(R.id.guide_image);
-        imageView.postDelayed(new Runnable() {
+        Button btn = findViewById(R.id.btn);
+        btn.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void run() {
+            public void onClick(View v) {
                 Intent intent = new Intent(GuideActivity.this,VideoEditActivity.class);
                 startActivity(intent);
-                finish();
-
+//                finish();
             }
-        },1000);
+        });
+//        imageView.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                Intent intent = new Intent(GuideActivity.this,VideoEditActivity.class);
+//                startActivity(intent);
+//                finish();
+//
+//            }
+//        },1000);
     }
 
 
