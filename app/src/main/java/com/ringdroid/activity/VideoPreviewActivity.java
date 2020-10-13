@@ -8,7 +8,7 @@ import android.widget.MediaController;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.ringdroid.testvideoedit.R;
+import com.ringdroid.R;
 
 import io.microshow.rxffmpeg.player.MeasureHelper;
 import io.microshow.rxffmpeg.player.RxFFmpegPlayerControllerImpl;

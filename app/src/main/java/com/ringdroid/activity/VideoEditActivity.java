@@ -18,7 +18,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.ringdroid.testvideoedit.R;
+import com.ringdroid.R;
 import com.ringdroid.util.ThreadUtil;
 import com.ringdroid.util.Utils;
 import com.ringdroid.util.VideoTrimmerUtil;
@@ -264,11 +264,13 @@ public class VideoEditActivity extends AppCompatActivity {
                     if (mEndPos < mStartPos)
                         mEndPos = mStartPos;
                 }
+                //裁剪时长限制-start
                 if(mEndPos - mStartPos > mMaxCutTimePixels) {
                     mEndPos = mStartPos + mMaxCutTimePixels;
                 }else if(mEndPos - mStartPos < mMinCutTimePixels) {
                     mEndPos = mStartPos + mMinCutTimePixels;
                 }
+                //裁剪时长限制-end
                 updateDisplay();
             }
 
@@ -912,7 +914,7 @@ public class VideoEditActivity extends AppCompatActivity {
                 .subscribe(myRxFFmpegSubscriber);
     }
 
-    private String targetPath = "/storage/emulated/0/VideoEditor/out2.mp4";
+    private String targetPath = "/storage/emulated/0/avEditor/out2.mp4";
     private long startTime;//记录开始时间
     private long endTime;//记录结束时间
     private float duration;//裁剪时长

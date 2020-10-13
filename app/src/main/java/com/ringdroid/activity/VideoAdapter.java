@@ -11,7 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.ringdroid.testvideoedit.R;
+import com.ringdroid.R;
 import com.ringdroid.util.TimeUtil;
 
 import java.util.List;

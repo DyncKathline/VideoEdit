@@ -33,7 +33,7 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 
-import com.ringdroid.testvideoedit.R;
+import com.ringdroid.R;
 
 /**
  * WaveformView is an Android view that displays a visual representation

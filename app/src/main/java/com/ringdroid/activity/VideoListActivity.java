@@ -21,7 +21,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.ringdroid.testvideoedit.R;
+import com.ringdroid.R;
 import com.ringdroid.util.SpacingDecoration;
 
 import java.io.File;
@@ -140,7 +140,7 @@ public class VideoListActivity extends AppCompatActivity implements VideoAdapter
                 mediaMetadataRetriever.setDataSource(getBaseContext(), Uri.parse(path));
                 duration = Long.parseLong(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
             } catch (Exception e) {
-                e.printStackTrace();
+//                e.printStackTrace();
             }
         }
         return duration;

@@ -8,7 +8,7 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
-import com.ringdroid.testvideoedit.R;
+import com.ringdroid.R;
 
 
 /**
