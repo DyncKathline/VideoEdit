@@ -29,6 +29,8 @@ import com.ringdroid.view.WaveformView;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ref.WeakReference;
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
 
 import io.microshow.rxffmpeg.RxFFmpegCommandList;
 import io.microshow.rxffmpeg.RxFFmpegInvoke;
@@ -73,6 +75,52 @@ public class VideoEditActivity extends AppCompatActivity {
 
     private TextureVideoView videoView;
     private CutView cutView;
+
+    private float mMinCutTime = 3.0f;//裁剪最小时长，单位秒
+    private float mMaxCutTime = 15.0f;//裁剪最大时长，单位秒
+    private int mMinCutTimePixels;
+    private int mMaxCutTimePixels;
+
+    private Runnable mPlayerHandler = new Runnable() {
+        @Override
+        public void run() {
+            if (videoView != null && videoView.getDuration() > 0 && !isPause) {
+                finishOpeningSoundFile();
+                String mCaption = "0.00 s " + formatTime(mMaxPos) +
+                        " s";
+                info.setText(mCaption);
+                mCaption = getResources().getString(R.string.start_label) + " " + formatTime(mStartPos) +
+                        " s " + getResources().getString(R.string.end_label) + " " + formatTime(mEndPos) +
+                        " s";
+                cutInfo.setText(mCaption);
+            } else {
+                mHandler.postDelayed(mPlayerHandler, 100);
+            }
+        }
+    };
+
+    private Runnable mTimerRunnable = new Runnable() {
+        public void run() {
+            // Updating an EditText is slow on Android.  Make sure
+            // we only do the update if the text has actually changed.
+            if (mStartPos != mLastDisplayedStartPos || mEndPos != mLastDisplayedEndPos) {
+                mLastDisplayedStartPos = mStartPos;
+                mLastDisplayedEndPos = mEndPos;
+                String mCaption = getResources().getString(R.string.start_label) + " " + formatTime(mStartPos) +
+                        " s " + getResources().getString(R.string.end_label) + " " + formatTime(mEndPos) +
+                        " s";
+                cutInfo.setText(mCaption);
+            }
+
+            if (mWaveformView.getPlaybackPos() != -1) {
+                String mCaption = formatTime(mWaveformView.getPlaybackPos()) + " s " + formatTime(mMaxPos) + " " +
+                        "s";
+                info.setText(mCaption);
+            }
+
+            mHandler.postDelayed(mTimerRunnable, 100);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -216,6 +264,11 @@ public class VideoEditActivity extends AppCompatActivity {
                     if (mEndPos < mStartPos)
                         mEndPos = mStartPos;
                 }
+                if(mEndPos - mStartPos > mMaxCutTimePixels) {
+                    mEndPos = mStartPos + mMaxCutTimePixels;
+                }else if(mEndPos - mStartPos < mMinCutTimePixels) {
+                    mEndPos = mStartPos + mMinCutTimePixels;
+                }
                 updateDisplay();
             }
 
@@ -276,6 +329,7 @@ public class VideoEditActivity extends AppCompatActivity {
             @Override
             public void markerRight(MarkerView marker, int velocity) {
                 mKeyDown = true;
+
                 if (marker == mStartMarker) {
                     int saveStart = mStartPos;
                     mStartPos += velocity;
@@ -445,6 +499,23 @@ public class VideoEditActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
+    private void enableDisableButtons() {
+        if (mIsPlaying) {
+            mPlayButton.setImageResource(android.R.drawable.ic_media_pause);
+            mPlayButton.setContentDescription(getResources().getText(R.string.stop));
+        } else {
+            mPlayButton.setImageResource(android.R.drawable.ic_media_play);
+            mPlayButton.setContentDescription(getResources().getText(R.string.play));
+        }
+    }
+
+    private void resetPositions() {
+        mStartPos = mWaveformView.secondsToPixels(0.0);
+        mEndPos = mWaveformView.secondsToPixels(mMaxCutTime);
+        mMinCutTimePixels = mWaveformView.secondsToPixels(mMinCutTime);
+        mMaxCutTimePixels = mWaveformView.secondsToPixels(mMaxCutTime);
+    }
+
     private void finishOpeningSoundFile() {
         mWaveformView.setDuration(videoView.getDuration());
 
@@ -595,62 +666,6 @@ public class VideoEditActivity extends AppCompatActivity {
         mEndMarker.setLayoutParams(params);
     }
 
-    private Runnable mPlayerHandler = new Runnable() {
-        @Override
-        public void run() {
-            if (videoView != null && videoView.getDuration() > 0 && !isPause) {
-                finishOpeningSoundFile();
-                String mCaption = "0.00 s " + formatTime(mMaxPos) +
-                        " s";
-                info.setText(mCaption);
-                mCaption = getResources().getString(R.string.start_label) + " " + formatTime(mStartPos) +
-                        " s " + getResources().getString(R.string.end_label) + " " + formatTime(mEndPos) +
-                        " s";
-                cutInfo.setText(mCaption);
-            } else {
-                mHandler.postDelayed(mPlayerHandler, 100);
-            }
-        }
-    };
-
-    private Runnable mTimerRunnable = new Runnable() {
-        public void run() {
-            // Updating an EditText is slow on Android.  Make sure
-            // we only do the update if the text has actually changed.
-            if (mStartPos != mLastDisplayedStartPos || mEndPos != mLastDisplayedEndPos) {
-                mLastDisplayedStartPos = mStartPos;
-                mLastDisplayedEndPos = mEndPos;
-                String mCaption = getResources().getString(R.string.start_label) + " " + formatTime(mStartPos) +
-                        " s " + getResources().getString(R.string.end_label) + " " + formatTime(mEndPos) +
-                        " s";
-                cutInfo.setText(mCaption);
-            }
-
-            if (mWaveformView.getPlaybackPos() != -1) {
-                String mCaption = formatTime(mWaveformView.getPlaybackPos()) + " s " + formatTime(mMaxPos) + " " +
-                        "s";
-                info.setText(mCaption);
-            }
-
-            mHandler.postDelayed(mTimerRunnable, 100);
-        }
-    };
-
-    private void enableDisableButtons() {
-        if (mIsPlaying) {
-            mPlayButton.setImageResource(android.R.drawable.ic_media_pause);
-            mPlayButton.setContentDescription(getResources().getText(R.string.stop));
-        } else {
-            mPlayButton.setImageResource(android.R.drawable.ic_media_play);
-            mPlayButton.setContentDescription(getResources().getText(R.string.play));
-        }
-    }
-
-    private void resetPositions() {
-        mStartPos = mWaveformView.secondsToPixels(0.0);
-        mEndPos = mWaveformView.secondsToPixels(15.0);
-    }
-
     private int trap(int pos) {
         if (pos < 0)
             return 0;
@@ -700,22 +715,29 @@ public class VideoEditActivity extends AppCompatActivity {
         }
     }
 
-    private String formatDecimal(double x) {
-        int xWhole = (int) x;
-        int xFrac = (int) (100 * (x - xWhole) + 0.5);
-
-        if (xFrac >= 100) {
-            xWhole++; //Round up
-            xFrac -= 100; //Now we need the remainder after the round up
-            if (xFrac < 10) {
-                xFrac *= 10; //we need a fraction that is 2 digits long
-            }
+    private double formatTime2Double(int pixels) {
+        if (mWaveformView != null && mWaveformView.isInitialized()) {
+            return formatDouble(mWaveformView.pixelsToSeconds(pixels));
+        } else {
+            return 0.00;
         }
+    }
 
-        if (xFrac < 10)
-            return xWhole + ".0" + xFrac;
-        else
-            return xWhole + "." + xFrac;
+    private double formatDouble(double x) {
+        BigDecimal bg = new BigDecimal(x);
+        /**
+         * 参数：
+         newScale - 要返回的 BigDecimal 值的标度。
+         roundingMode - 要应用的舍入模式。
+         返回：
+         一个 BigDecimal，其标度为指定值，其非标度值可以通过此 BigDecimal 的非标度值乘以或除以十的适当次幂来确定。
+         */
+        return bg.setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+    }
+
+    private String formatDecimal(double x) {
+        DecimalFormat df = new DecimalFormat("#.00");
+        return df.format(x);
     }
 
     private synchronized void handlePause() {
