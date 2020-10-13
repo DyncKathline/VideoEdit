@@ -10,16 +10,19 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:background="#000000">
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="200dp">
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
             <com.ringdroid.activity.TextureVideoView
                 android:id="@+id/video_view"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
+                android:layout_height="match_parent"
+                android:layout_centerInParent="true"/>
 
             <com.ringdroid.view.CutView
                 android:id="@+id/cut_view"
@@ -33,9 +36,14 @@
             style="@style/AudioFileInfoOverlayText"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:nextFocusUp="@+id/endmarker"
-            android:nextFocusDown="@+id/play" />
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/cut_info"
+            style="@style/AudioFileInfoOverlayText"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center" />
 
         <RelativeLayout
             android:layout_width="wrap_content"
@@ -82,6 +90,23 @@
             android:layout_height="62dp"
             android:gravity="center">
 
+            <Button
+                android:id="@+id/back"
+                style="@android:style/MediaButton"
+                android:layout_width="64dp"
+                android:layout_height="52dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="6dp"
+                android:textColor="#ffffff"
+                android:textSize="16sp"
+                android:onClick="back"
+                android:text="返回" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"/>
+
             <ImageButton
                 android:id="@+id/rew"
                 style="@android:style/MediaButton"
@@ -113,78 +138,29 @@
                 android:contentDescription="@string/ffwd"
                 android:src="@android:drawable/ic_media_next" />
 
+            <Space
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"/>
+
+            <Button
+                android:id="@+id/cut"
+                style="@android:style/MediaButton"
+                android:layout_width="64dp"
+                android:layout_height="52dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="6dp"
+                android:contentDescription="@string/rewind"
+                android:textColor="#ffffff"
+                android:textSize="16sp"
+                android:onClick="startClipVideo"
+                android:text="裁剪" />
+
         </LinearLayout>
 
         <LinearLayout style="@style/HorizontalDividerTop" />
 
         <LinearLayout style="@style/HorizontalDividerBottom" />
-
-        <LinearLayout
-            style="@style/ToolbarBackground"
-            android:layout_width="match_parent"
-            android:layout_height="62dp"
-            android:gravity="center"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/mark_start"
-                android:layout_width="wrap_content"
-                android:layout_height="31dp"
-                android:clickable="true"
-                android:gravity="center"
-                android:labelFor="@+id/starttext"
-                android:text="@string/start_label"
-                android:textColor="#ffffffff"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/starttext"
-                android:layout_width="70dp"
-                android:layout_height="31dp"
-                android:layout_marginLeft="10dp"
-                android:layout_marginRight="30dp"
-                android:gravity="center"
-                android:textColor="#ffffffff"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/mark_end"
-                android:layout_width="wrap_content"
-                android:layout_height="31dp"
-                android:clickable="true"
-                android:gravity="center"
-                android:labelFor="@+id/endtext"
-                android:text="@string/end_label"
-                android:textColor="#ffffffff"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/endtext"
-                android:layout_width="70dp"
-                android:layout_height="31dp"
-                android:layout_marginLeft="10dp"
-                android:gravity="center"
-                android:textColor="#ffffffff"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-
-        </LinearLayout>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:layout_marginLeft="20dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginRight="20dp"
-            android:background="@drawable/radius_confirm"
-            android:gravity="center"
-            android:onClick="startClipVideo"
-            android:text="确定"
-            android:textColor="@android:color/white"
-            android:textSize="20sp" />
 
     </LinearLayout>
 

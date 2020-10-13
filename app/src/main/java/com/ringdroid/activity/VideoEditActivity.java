@@ -38,12 +38,11 @@ public class VideoEditActivity extends AppCompatActivity {
     private WaveformView mWaveformView;
     private MarkerView mStartMarker;
     private MarkerView mEndMarker;
-    private TextView mStartText;
-    private TextView mEndText;
     private ImageButton mPlayButton;
     private ImageButton mRewindButton;
     private ImageButton mFfwdButton;
     private TextView info;
+    private TextView cutInfo;
     private boolean mKeyDown;
 
     private int mWidth;
@@ -92,20 +91,12 @@ public class VideoEditActivity extends AppCompatActivity {
         videoView = findViewById(R.id.video_view);
         cutView = findViewById(R.id.cut_view);
 
-        mStartText = (TextView)findViewById(R.id.starttext);
-        mEndText = (TextView)findViewById(R.id.endtext);
-
         mPlayButton = (ImageButton)findViewById(R.id.play);
         mPlayButton.setOnClickListener(mPlayListener);
         mRewindButton = (ImageButton)findViewById(R.id.rew);
         mRewindButton.setOnClickListener(mRewindListener);
         mFfwdButton = (ImageButton)findViewById(R.id.ffwd);
         mFfwdButton.setOnClickListener(mFfwdListener);
-
-        TextView markStartButton = (TextView) findViewById(R.id.mark_start);
-        markStartButton.setOnClickListener(mMarkStartListener);
-        TextView markEndButton = (TextView) findViewById(R.id.mark_end);
-        markEndButton.setOnClickListener(mMarkEndListener);
 
         enableDisableButtons();
 
@@ -336,6 +327,7 @@ public class VideoEditActivity extends AppCompatActivity {
         mEndVisible = true;
 
         info = findViewById(R.id.info);
+        cutInfo = findViewById(R.id.cut_info);
         videoView.setVideoPath(videoPath);
         addListener();
         mHandler.postDelayed(mPlayerHandler, 100);
@@ -570,9 +562,9 @@ public class VideoEditActivity extends AppCompatActivity {
                 RelativeLayout.LayoutParams.MATCH_PARENT);
         params.setMargins(
                 startX,
+                20,
                 0,
-                0,
-                0);
+                20);
         mStartMarker.setLayoutParams(params);
 
         int waveformViewWidth = mWaveformView.getWidth();
@@ -582,16 +574,16 @@ public class VideoEditActivity extends AppCompatActivity {
         if(endX + mStartMarker.getWidth() < waveformViewWidth) {
             params.setMargins(
                     endX,
+                    20,
                     0,
-                    0,
-                    0);
+                    20);
             params.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
         }else {
             params.setMargins(
                     0,
-                    0,
+                    20,
                     waveformViewWidth - endX - mStartMarker.getWidth(),
-                    0);
+                    20);
             params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
         }
         mEndMarker.setLayoutParams(params);
@@ -602,9 +594,13 @@ public class VideoEditActivity extends AppCompatActivity {
         public void run() {
             if(videoView != null && videoView.getDuration() > 0 && !isPause){
                 finishOpeningSoundFile();
-                String mCaption = "0.00 seconds "+formatTime(mMaxPos) + " " +
-                        "seconds";
+                String mCaption = "0.00 s "+formatTime(mMaxPos) + " " +
+                        "s";
                 info.setText(mCaption);
+                mCaption = getResources().getString(R.string.start_label) + " " +formatTime(mStartPos) + " " +
+                        "s" + getResources().getString(R.string.end_label) + " " +formatTime(mEndPos) + " " +
+                        "s";
+                cutInfo.setText(mCaption);
             }else{
                 mHandler.postDelayed(mPlayerHandler, 100);
             }
@@ -615,21 +611,18 @@ public class VideoEditActivity extends AppCompatActivity {
         public void run() {
             // Updating an EditText is slow on Android.  Make sure
             // we only do the update if the text has actually changed.
-            if (mStartPos != mLastDisplayedStartPos &&
-                    !mStartText.hasFocus()) {
-                mStartText.setText(formatTime(mStartPos));
+            if (mStartPos != mLastDisplayedStartPos || mEndPos != mLastDisplayedEndPos) {
                 mLastDisplayedStartPos = mStartPos;
-            }
-
-            if (mEndPos != mLastDisplayedEndPos &&
-                    !mEndText.hasFocus()) {
-                mEndText.setText(formatTime(mEndPos));
                 mLastDisplayedEndPos = mEndPos;
+                String mCaption = getResources().getString(R.string.start_label) + " " +formatTime(mStartPos) + " " +
+                        "s" + getResources().getString(R.string.end_label) + " " +formatTime(mEndPos) + " " +
+                        "s";
+                cutInfo.setText(mCaption);
             }
 
             if(mWaveformView.getPlaybackPos() != -1){
-                String mCaption = formatTime(mWaveformView.getPlaybackPos())+" seconds "+formatTime(mMaxPos) + " " +
-                        "seconds";
+                String mCaption = formatTime(mWaveformView.getPlaybackPos())+" s "+formatTime(mMaxPos) + " " +
+                        "s";
                 info.setText(mCaption);
             }
 
@@ -793,28 +786,6 @@ public class VideoEditActivity extends AppCompatActivity {
         }
     };
 
-    private View.OnClickListener mMarkStartListener = new View.OnClickListener() {
-        public void onClick(View sender) {
-            if (mIsPlaying) {
-                mStartPos = mWaveformView.millisecsToPixels(
-                        (int) videoView.getCurrentPosition());
-                updateDisplay();
-            }
-        }
-    };
-
-    private View.OnClickListener mMarkEndListener = new View.OnClickListener() {
-        public void onClick(View sender) {
-            if (mIsPlaying) {
-                mEndPos = mWaveformView.millisecsToPixels(
-                        (int) videoView.getCurrentPosition());
-                updateDisplay();
-                handlePause();
-            }
-        }
-    };
-
-
     private long getCurrentTime() {
         return System.nanoTime() / 1000000;
     }
@@ -823,6 +794,10 @@ public class VideoEditActivity extends AppCompatActivity {
         StringWriter writer = new StringWriter();
         e.printStackTrace(new PrintWriter(writer));
         return writer.toString();
+    }
+
+    public void back(View view) {
+        finish();
     }
 
     public void onConfirm(View view){
