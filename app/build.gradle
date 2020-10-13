@@ -5,7 +5,7 @@ android {
 
     defaultConfig {
         applicationId "com.ringdroid.testvideoedit"
-        minSdkVersion 18
+        minSdkVersion 16
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
@@ -26,4 +26,5 @@ dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
     implementation 'com.github.bumptech.glide:glide:4.11.0'
 //    implementation 'com.github.microshow:RxFFmpeg:4.8.0'
+    implementation project(':rxffmpeg')
 }

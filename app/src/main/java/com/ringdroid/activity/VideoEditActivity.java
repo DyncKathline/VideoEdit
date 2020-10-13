@@ -1,16 +1,13 @@
 package com.ringdroid.activity;
 
+import android.app.ProgressDialog;
 import android.graphics.Bitmap;
-import android.graphics.SurfaceTexture;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
@@ -21,6 +18,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import com.ringdroid.testvideoedit.R;
+import com.ringdroid.util.Utils;
 import com.ringdroid.util.VideoTrimmerUtil;
 import com.ringdroid.view.CutView;
 import com.ringdroid.view.MarkerView;
@@ -28,10 +26,15 @@ import com.ringdroid.view.WaveformView;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.ref.WeakReference;
+
+import io.microshow.rxffmpeg.RxFFmpegCommandList;
+import io.microshow.rxffmpeg.RxFFmpegInvoke;
+import io.microshow.rxffmpeg.RxFFmpegSubscriber;
 
 public class VideoEditActivity extends AppCompatActivity {
 
-    private String mFilename;
+    private String videoPath;
     private WaveformView mWaveformView;
     private MarkerView mStartMarker;
     private MarkerView mEndMarker;
@@ -75,7 +78,7 @@ public class VideoEditActivity extends AppCompatActivity {
         setContentView(R.layout.activity_video_edit);
         mIsPlaying = false;
 
-        mFilename = getIntent().getStringExtra("video_path");
+        videoPath = getIntent().getStringExtra("video_path");
 //        mFilename = "/storage/emulated/0/qqmusic/mv/儿歌-小手拍拍.mp4";
 //        mFilename = "/storage/emulated/0/Movies/ScreenCaptures/Screen-20200804-150019-360x480.mp4";
         mKeyDown = false;
@@ -333,7 +336,7 @@ public class VideoEditActivity extends AppCompatActivity {
         mEndVisible = true;
 
         info = findViewById(R.id.info);
-        videoView.setVideoPath(mFilename);
+        videoView.setVideoPath(videoPath);
         addListener();
         mHandler.postDelayed(mPlayerHandler, 100);
         mHandler.postDelayed(mTimerRunnable, 100);
@@ -377,7 +380,7 @@ public class VideoEditActivity extends AppCompatActivity {
     private void notifyOnPrepared() {
         long duration = videoView.getDuration();
         Log.i(TAG, "duration: " + duration);
-        Uri videoUri = Uri.parse(mFilename);
+        Uri videoUri = Uri.parse(videoPath);
         long startPosition = 0;
         long endPosition = duration;
         int interval = 1000;// 1秒
@@ -391,7 +394,7 @@ public class VideoEditActivity extends AppCompatActivity {
                             if(bitmaps != null){
                                 bitmaps.put(interval, bitmap);
                             }
-                            Log.i(TAG, "interval: "+interval+", bitmaps.size: " + bitmaps.size());
+//                            Log.i(TAG, "interval: "+interval+", bitmaps.size: " + bitmaps.size());
                             updateThumbnail();
                         }
                     }
@@ -873,6 +876,118 @@ public class VideoEditActivity extends AppCompatActivity {
 //                vst,
 //                vse,
 //                cropWidth,cropHeight,textureVertexData);
+    }
+
+    public void startClipVideo(View view) {
+        String targetPath = "/storage/emulated/0/VideoEditor/out2.mp4";
+        float startTime = Float.parseFloat(formatTime(mStartPos));
+        float endTime = Float.parseFloat(formatTime(mEndPos));
+        duration = endTime - startTime;
+        RxFFmpegCommandList cmdlist = new RxFFmpegCommandList();
+        cmdlist.append("-ss");
+        cmdlist.append(startTime+"");
+        cmdlist.append("-t");
+        cmdlist.append(duration +"");
+        cmdlist.append("-i");
+        cmdlist.append(videoPath);
+        cmdlist.append("-c:v");
+        cmdlist.append("libx264");
+        cmdlist.append("-c:a");
+        cmdlist.append("aac");
+        cmdlist.append("-strict");
+        cmdlist.append("experimental");
+        cmdlist.append("-b");
+        cmdlist.append("500k");
+        cmdlist.append(targetPath);
+        String[] commands = cmdlist.build(true);
+
+        openProgressDialog();
+        MyRxFFmpegSubscriber myRxFFmpegSubscriber = new MyRxFFmpegSubscriber(this);
+
+        //开始执行FFmpeg命令
+        RxFFmpegInvoke.getInstance()
+                .runCommandRxJava(commands)
+                .subscribe(myRxFFmpegSubscriber);
+    }
+    private long startTime;//记录开始时间
+    private long endTime;//记录结束时间
+    private float duration;//裁剪时长
+
+    private ProgressDialog mProgressDialog;
+
+    private void openProgressDialog() {
+        //统计开始时间
+        startTime = System.nanoTime();
+        mProgressDialog = Utils.openProgressDialog(this);
+    }
+
+    /**
+     * 取消进度条
+     *
+     * @param dialogTitle Title
+     */
+    private void cancelProgressDialog(String dialogTitle) {
+        if (mProgressDialog != null) {
+            mProgressDialog.cancel();
+        }
+        if (!TextUtils.isEmpty(dialogTitle)) {
+            showDialog(dialogTitle);
+        }
+    }
+
+    /**
+     * 设置进度条
+     */
+    private void setProgressDialog(int progress, long progressTime) {
+        if (mProgressDialog != null) {
+            Log.i("RxTAG", "progress: " + progress + "progressTime: " + progressTime + ", ---: " + (int) ((double) progressTime / 1000000 / 10 * 100f));
+            mProgressDialog.setProgress((int) ((double) progressTime / 1000000 / duration * 100f));
+            //progressTime 可以在结合视频总时长去计算合适的进度值
+            mProgressDialog.setMessage("已处理progressTime=" + (double) progressTime / 1000000 + "秒");
+        }
+    }
+
+    private void showDialog(String message) {
+        //统计结束时间
+        endTime = System.nanoTime();
+        Utils.showDialog(this, message, Utils.convertUsToTime((endTime - startTime) / 1000, false));
+    }
+
+    // 这里设为静态内部类，防止内存泄露
+    public class MyRxFFmpegSubscriber extends RxFFmpegSubscriber {
+
+        private WeakReference<AppCompatActivity> mWeakReference;
+
+        public MyRxFFmpegSubscriber(AppCompatActivity appCompatActivity) {
+            mWeakReference = new WeakReference<>(appCompatActivity);
+        }
+
+        @Override
+        public void onFinish() {
+            final AppCompatActivity appCompatActivity = mWeakReference.get();
+            if (appCompatActivity != null) {
+                cancelProgressDialog("处理成功");
+            }
+        }
+
+        @Override
+        public void onProgress(int progress, long progressTime) {
+            //progressTime 可以在结合视频总时长去计算合适的进度值
+            setProgressDialog(progress, progressTime);
+        }
+
+        @Override
+        public void onCancel() {
+            cancelProgressDialog("已取消");
+        }
+
+        @Override
+        public void onError(String message) {
+            final AppCompatActivity appCompatActivity = mWeakReference.get();
+            if (appCompatActivity != null) {
+                cancelProgressDialog("出错了 onError：" + message);
+            }
+        }
     }
 
 }

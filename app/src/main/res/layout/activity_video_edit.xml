@@ -181,7 +181,7 @@
             android:layout_marginRight="20dp"
             android:background="@drawable/radius_confirm"
             android:gravity="center"
-            android:onClick="onConfirm"
+            android:onClick="startClipVideo"
             android:text="确定"
             android:textColor="@android:color/white"
             android:textSize="20sp" />
