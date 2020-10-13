@@ -20,11 +20,11 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
+
+import androidx.annotation.Nullable;
 
 /**
  * Represents a draggable start or end marker.
@@ -39,22 +39,30 @@ import android.widget.RelativeLayout;
 public class MarkerView extends ImageView {
 
     public interface MarkerListener {
-        public void markerTouchStart(MarkerView marker, float pos);
-        public void markerTouchMove(MarkerView marker, float pos);
-        public void markerTouchEnd(MarkerView marker);
-        public void markerFocus(MarkerView marker);
-        public void markerLeft(MarkerView marker, int velocity);
-        public void markerRight(MarkerView marker, int velocity);
-        public void markerEnter(MarkerView marker);
-        public void markerKeyUp();
-        public void markerDraw();
-    };
+        void markerTouchStart(MarkerView marker, float pos);
+        void markerTouchMove(MarkerView marker, float pos);
+        void markerTouchEnd(MarkerView marker);
+        void markerFocus(MarkerView marker);
+        void markerLeft(MarkerView marker, int velocity);
+        void markerRight(MarkerView marker, int velocity);
+        void markerEnter(MarkerView marker);
+        void markerKeyUp();
+        void markerDraw();
+    }
 
     private int mVelocity;
     private MarkerListener mListener;
 
-    public MarkerView(Context context, AttributeSet attrs) {
-        super(context, attrs);
+    public MarkerView(Context context) {
+        this(context, null);
+    }
+
+    public MarkerView(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, 0);
+    }
+
+    public MarkerView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
 
         // Make sure we get keys
         setFocusable(true);

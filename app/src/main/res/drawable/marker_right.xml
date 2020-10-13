@@ -16,9 +16,9 @@
 
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_pressed="true"
-          android:drawable="@drawable/marker_right_pressed" />
+          android:drawable="@drawable/ic_progress_right" />
     <item android:state_focused="true"
           android:state_pressed="false"
-          android:drawable="@drawable/marker_right_focused" />
-    <item android:drawable="@drawable/marker_right_normal" />
+          android:drawable="@drawable/ic_progress_right" />
+    <item android:drawable="@drawable/ic_progress_right" />
 </selector>
