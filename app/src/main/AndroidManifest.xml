@@ -20,6 +20,7 @@
             </intent-filter>
         </activity>
         <activity android:name="com.ringdroid.activity.VideoEditActivity" android:screenOrientation="portrait"/>
+        <activity android:name="com.ringdroid.activity.VideoPreviewActivity" android:screenOrientation="portrait"/>
     </application>
 
 </manifest>

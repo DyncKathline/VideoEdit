@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 
+import java.io.File;
 import java.lang.reflect.Field;
 
 import io.microshow.rxffmpeg.RxFFmpegInvoke;
@@ -81,8 +82,8 @@ public class Utils {
         builder.create().show();
     }
 
-    public static ProgressDialog openProgressDialog(Context context) {
-        ProgressDialog mProgressDialog = new ProgressDialog(context);
+    public static ProgressDialog openProgressDialog(Context context, final String targetPath) {
+        final ProgressDialog mProgressDialog = new ProgressDialog(context);
         final int totalProgressTime = 100;
         mProgressDialog.setMessage("正在转换视频，请稍后...");
         mProgressDialog.setButton("取消", new DialogInterface.OnClickListener() {
@@ -91,6 +92,9 @@ public class Utils {
             public void onClick(DialogInterface dialog, int which) {
                 //中断 ffmpeg
                 RxFFmpegInvoke.getInstance().exit();
+                if(mProgressDialog.getProgress() < 100) {
+                    deleteFile(targetPath);
+                }
             }
         });
         mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
@@ -99,6 +103,14 @@ public class Utils {
         mProgressDialog.setMax(totalProgressTime);
         mProgressDialog.show();
         return mProgressDialog;
+    }
+
+    public static boolean deleteFile(String filePath) {
+        File file = new File(filePath);
+        if (file.isFile() && file.exists()) {
+            return file.delete();
+        }
+        return false;
     }
 
     /**

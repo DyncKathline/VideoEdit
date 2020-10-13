@@ -17,7 +17,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.ringdroid.testvideoedit.R;
+import com.ringdroid.util.ThreadUtil;
 import com.ringdroid.util.Utils;
 import com.ringdroid.util.VideoTrimmerUtil;
 import com.ringdroid.view.CutView;
@@ -34,6 +36,7 @@ import io.microshow.rxffmpeg.RxFFmpegSubscriber;
 
 public class VideoEditActivity extends AppCompatActivity {
 
+    private final String TAG = "VideoEditActivity";
     private String videoPath;
     private WaveformView mWaveformView;
     private MarkerView mStartMarker;
@@ -91,16 +94,16 @@ public class VideoEditActivity extends AppCompatActivity {
         videoView = findViewById(R.id.video_view);
         cutView = findViewById(R.id.cut_view);
 
-        mPlayButton = (ImageButton)findViewById(R.id.play);
+        mPlayButton = (ImageButton) findViewById(R.id.play);
         mPlayButton.setOnClickListener(mPlayListener);
-        mRewindButton = (ImageButton)findViewById(R.id.rew);
+        mRewindButton = (ImageButton) findViewById(R.id.rew);
         mRewindButton.setOnClickListener(mRewindListener);
-        mFfwdButton = (ImageButton)findViewById(R.id.ffwd);
+        mFfwdButton = (ImageButton) findViewById(R.id.ffwd);
         mFfwdButton.setOnClickListener(mFfwdListener);
 
         enableDisableButtons();
 
-        mWaveformView = (WaveformView)findViewById(R.id.waveform);
+        mWaveformView = (WaveformView) findViewById(R.id.waveform);
         waveformListener = new WaveformView.WaveformListener() {
             @Override
             public void waveformTouchStart(float x) {
@@ -113,7 +116,7 @@ public class VideoEditActivity extends AppCompatActivity {
 
             @Override
             public void waveformTouchMove(float x) {
-                mOffset = trap((int)(mTouchInitialOffset + (mTouchStart - x)));
+                mOffset = trap((int) (mTouchInitialOffset + (mTouchStart - x)));
                 updateDisplay();
             }
 
@@ -126,7 +129,7 @@ public class VideoEditActivity extends AppCompatActivity {
                 if (elapsedMsec < 300) {
                     if (mIsPlaying) {
                         int seekMsec = mWaveformView.pixelsToMillisecs(
-                                (int)(mTouchStart + mOffset));
+                                (int) (mTouchStart + mOffset));
                         if (seekMsec >= mPlayStartMsec &&
                                 seekMsec < mPlayEndMsec) {
                             videoView.seekTo(seekMsec);
@@ -134,7 +137,7 @@ public class VideoEditActivity extends AppCompatActivity {
                             handlePause();
                         }
                     } else {
-                        onPlay((int)(mTouchStart + mOffset));
+                        onPlay((int) (mTouchStart + mOffset));
                     }
                 }
             }
@@ -143,7 +146,7 @@ public class VideoEditActivity extends AppCompatActivity {
             public void waveformFling(float x) {
                 mTouchDragging = false;
                 mOffsetGoal = mOffset;
-                mFlingVelocity = (int)(-x);
+                mFlingVelocity = (int) (-x);
                 updateDisplay();
             }
 
@@ -206,10 +209,10 @@ public class VideoEditActivity extends AppCompatActivity {
                 float delta = x - mTouchStart;
 
                 if (marker == mStartMarker) {
-                    mStartPos = trap((int)(mTouchInitialStartPos + delta));
-                    mEndPos = trap((int)(mTouchInitialEndPos + delta));
+                    mStartPos = trap((int) (mTouchInitialStartPos + delta));
+                    mEndPos = trap((int) (mTouchInitialEndPos + delta));
                 } else {
-                    mEndPos = trap((int)(mTouchInitialEndPos + delta));
+                    mEndPos = trap((int) (mTouchInitialEndPos + delta));
                     if (mEndPos < mStartPos)
                         mEndPos = mStartPos;
                 }
@@ -312,14 +315,14 @@ public class VideoEditActivity extends AppCompatActivity {
 
             }
         };
-        mStartMarker = (MarkerView)findViewById(R.id.startmarker);
+        mStartMarker = (MarkerView) findViewById(R.id.startmarker);
         mStartMarker.setListener(markerListener);
         mStartMarker.setAlpha(1f);
         mStartMarker.setFocusable(true);
         mStartMarker.setFocusableInTouchMode(true);
         mStartVisible = true;
 
-        mEndMarker = (MarkerView)findViewById(R.id.endmarker);
+        mEndMarker = (MarkerView) findViewById(R.id.endmarker);
         mEndMarker.setListener(markerListener);
         mEndMarker.setAlpha(1f);
         mEndMarker.setFocusable(true);
@@ -338,7 +341,6 @@ public class VideoEditActivity extends AppCompatActivity {
 
     private WaveformView.WaveformListener waveformListener;
 
-    private String TAG = "exoplayer";
     private void addListener() {
         //设置准备监听
         videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
@@ -383,7 +385,7 @@ public class VideoEditActivity extends AppCompatActivity {
                     @Override
                     public void onSingleCallback(final Bitmap bitmap, final Integer interval) {
                         if (bitmap != null) {
-                            if(bitmaps != null){
+                            if (bitmaps != null) {
                                 bitmaps.put(interval, bitmap);
                             }
 //                            Log.i(TAG, "interval: "+interval+", bitmaps.size: " + bitmaps.size());
@@ -395,6 +397,7 @@ public class VideoEditActivity extends AppCompatActivity {
 
     int REFRESH_TIME = 300;
     long lastConnectTime;
+
     private void updateThumbnail() {
         long time = SystemClock.elapsedRealtime();
         if (time - lastConnectTime > REFRESH_TIME) {
@@ -404,11 +407,12 @@ public class VideoEditActivity extends AppCompatActivity {
     }
 
     private boolean isPause = false;
+
     @Override
     protected void onPause() {
         super.onPause();
         isPause = true;
-        if(videoView == null){
+        if (videoView == null) {
             return;
         }
         videoView.start();
@@ -418,17 +422,19 @@ public class VideoEditActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         isPause = false;
-        if(mIsPlaying && videoView != null){
+        if (mIsPlaying && videoView != null) {
             videoView.pause();
         }
     }
 
-    /** Called when the activity is finally destroyed. */
+    /**
+     * Called when the activity is finally destroyed.
+     */
     @Override
     protected void onDestroy() {
         Log.v("Ringdroid", "EditActivity OnDestroy");
-        if(videoView != null){
-            if(videoView.isPlaying()){
+        if (videoView != null) {
+            if (videoView.isPlaying()) {
                 videoView.stopPlayback();
             }
             videoView.release(true);
@@ -571,14 +577,14 @@ public class VideoEditActivity extends AppCompatActivity {
         params = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.WRAP_CONTENT,
                 RelativeLayout.LayoutParams.MATCH_PARENT);
-        if(endX + mStartMarker.getWidth() < waveformViewWidth) {
+        if (endX + mStartMarker.getWidth() < waveformViewWidth) {
             params.setMargins(
                     endX,
                     20,
                     0,
                     20);
             params.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-        }else {
+        } else {
             params.setMargins(
                     0,
                     20,
@@ -589,19 +595,19 @@ public class VideoEditActivity extends AppCompatActivity {
         mEndMarker.setLayoutParams(params);
     }
 
-    private Runnable mPlayerHandler = new Runnable(){
+    private Runnable mPlayerHandler = new Runnable() {
         @Override
         public void run() {
-            if(videoView != null && videoView.getDuration() > 0 && !isPause){
+            if (videoView != null && videoView.getDuration() > 0 && !isPause) {
                 finishOpeningSoundFile();
-                String mCaption = "0.00 s "+formatTime(mMaxPos) + " " +
-                        "s";
+                String mCaption = "0.00 s " + formatTime(mMaxPos) +
+                        " s";
                 info.setText(mCaption);
-                mCaption = getResources().getString(R.string.start_label) + " " +formatTime(mStartPos) + " " +
-                        "s" + getResources().getString(R.string.end_label) + " " +formatTime(mEndPos) + " " +
-                        "s";
+                mCaption = getResources().getString(R.string.start_label) + " " + formatTime(mStartPos) +
+                        " s " + getResources().getString(R.string.end_label) + " " + formatTime(mEndPos) +
+                        " s";
                 cutInfo.setText(mCaption);
-            }else{
+            } else {
                 mHandler.postDelayed(mPlayerHandler, 100);
             }
         }
@@ -614,14 +620,14 @@ public class VideoEditActivity extends AppCompatActivity {
             if (mStartPos != mLastDisplayedStartPos || mEndPos != mLastDisplayedEndPos) {
                 mLastDisplayedStartPos = mStartPos;
                 mLastDisplayedEndPos = mEndPos;
-                String mCaption = getResources().getString(R.string.start_label) + " " +formatTime(mStartPos) + " " +
-                        "s" + getResources().getString(R.string.end_label) + " " +formatTime(mEndPos) + " " +
-                        "s";
+                String mCaption = getResources().getString(R.string.start_label) + " " + formatTime(mStartPos) +
+                        " s " + getResources().getString(R.string.end_label) + " " + formatTime(mEndPos) +
+                        " s";
                 cutInfo.setText(mCaption);
             }
 
-            if(mWaveformView.getPlaybackPos() != -1){
-                String mCaption = formatTime(mWaveformView.getPlaybackPos())+" s "+formatTime(mMaxPos) + " " +
+            if (mWaveformView.getPlaybackPos() != -1) {
+                String mCaption = formatTime(mWaveformView.getPlaybackPos()) + " s " + formatTime(mMaxPos) + " " +
                         "s";
                 info.setText(mCaption);
             }
@@ -695,8 +701,8 @@ public class VideoEditActivity extends AppCompatActivity {
     }
 
     private String formatDecimal(double x) {
-        int xWhole = (int)x;
-        int xFrac = (int)(100 * (x - xWhole) + 0.5);
+        int xWhole = (int) x;
+        int xFrac = (int) (100 * (x - xWhole) + 0.5);
 
         if (xFrac >= 100) {
             xWhole++; //Round up
@@ -800,11 +806,11 @@ public class VideoEditActivity extends AppCompatActivity {
         finish();
     }
 
-    public void onConfirm(View view){
-        long vst = (long)(Double.parseDouble(formatTime(mStartPos))*1000*1000);
-        long vse = (long)(Double.parseDouble(formatTime(mEndPos))*1000*1000);
-        if(vse - vst < 5 * 1000*1000){
-            Toast.makeText(this,"时长不能小于5秒",Toast.LENGTH_SHORT).show();
+    public void onConfirm(View view) {
+        long vst = (long) (Double.parseDouble(formatTime(mStartPos)) * 1000 * 1000);
+        long vse = (long) (Double.parseDouble(formatTime(mEndPos)) * 1000 * 1000);
+        if (vse - vst < 5 * 1000 * 1000) {
+            Toast.makeText(this, "时长不能小于5秒", Toast.LENGTH_SHORT).show();
             return;
         }
         //展示裁剪进度回调
@@ -828,16 +834,16 @@ public class VideoEditActivity extends AppCompatActivity {
         //得到裁剪位置
         int cropWidth = (int) (videoView.getVideoWidth() * (rightPro - leftPro));
         int cropHeight = (int) (videoView.getVideoHeight() * (bottomPro - topPro));
-        if(cropWidth%2 != 0){
+        if (cropWidth % 2 != 0) {
             cropWidth = cropWidth - 1;
         }
-        if(cropHeight%2 != 0){
+        if (cropHeight % 2 != 0) {
             cropHeight = cropHeight - 1;
         }
-        float f = left/cutView.getWidth();
-        float t = 1.0f - top/cutView.getHeight();
-        float r = right/cutView.getWidth();
-        float b = 1.0f - bottom/cutView.getHeight();
+        float f = left / cutView.getWidth();
+        float t = 1.0f - top / cutView.getHeight();
+        float r = right / cutView.getWidth();
+        float b = 1.0f - bottom / cutView.getHeight();
 
 
         float[] textureVertexData = {
@@ -854,15 +860,14 @@ public class VideoEditActivity extends AppCompatActivity {
     }
 
     public void startClipVideo(View view) {
-        String targetPath = "/storage/emulated/0/VideoEditor/out2.mp4";
         float startTime = Float.parseFloat(formatTime(mStartPos));
         float endTime = Float.parseFloat(formatTime(mEndPos));
         duration = endTime - startTime;
         RxFFmpegCommandList cmdlist = new RxFFmpegCommandList();
         cmdlist.append("-ss");
-        cmdlist.append(startTime+"");
+        cmdlist.append(startTime + "");
         cmdlist.append("-t");
-        cmdlist.append(duration +"");
+        cmdlist.append(duration + "");
         cmdlist.append("-i");
         cmdlist.append(videoPath);
         cmdlist.append("-c:v");
@@ -884,6 +889,8 @@ public class VideoEditActivity extends AppCompatActivity {
                 .runCommandRxJava(commands)
                 .subscribe(myRxFFmpegSubscriber);
     }
+
+    private String targetPath = "/storage/emulated/0/VideoEditor/out2.mp4";
     private long startTime;//记录开始时间
     private long endTime;//记录结束时间
     private float duration;//裁剪时长
@@ -893,7 +900,7 @@ public class VideoEditActivity extends AppCompatActivity {
     private void openProgressDialog() {
         //统计开始时间
         startTime = System.nanoTime();
-        mProgressDialog = Utils.openProgressDialog(this);
+        mProgressDialog = Utils.openProgressDialog(this, targetPath);
     }
 
     /**
@@ -918,7 +925,8 @@ public class VideoEditActivity extends AppCompatActivity {
             Log.i("RxTAG", "progress: " + progress + "progressTime: " + progressTime + ", ---: " + (int) ((double) progressTime / 1000000 / 10 * 100f));
             mProgressDialog.setProgress((int) ((double) progressTime / 1000000 / duration * 100f));
             //progressTime 可以在结合视频总时长去计算合适的进度值
-            mProgressDialog.setMessage("已处理progressTime=" + (double) progressTime / 1000000 + "秒");
+            double time = (double) progressTime / 1000000;
+            mProgressDialog.setMessage("已耗时" + String.format("%.2f", time) + "秒");
         }
     }
 
@@ -941,7 +949,14 @@ public class VideoEditActivity extends AppCompatActivity {
         public void onFinish() {
             final AppCompatActivity appCompatActivity = mWeakReference.get();
             if (appCompatActivity != null) {
-                cancelProgressDialog("处理成功");
+//                cancelProgressDialog("处理成功");
+                endTime = System.nanoTime();
+                String takeUpTime = Utils.convertUsToTime((endTime - startTime) / 1000, false);
+                Toast.makeText(getBaseContext(), "耗时：" + takeUpTime, Toast.LENGTH_SHORT).show();
+                if (mProgressDialog != null) {
+                    mProgressDialog.cancel();
+                }
+                VideoPreviewActivity.open(getBaseContext(), targetPath);
             }
         }
 
@@ -953,7 +968,8 @@ public class VideoEditActivity extends AppCompatActivity {
 
         @Override
         public void onCancel() {
-            cancelProgressDialog("已取消");
+//            cancelProgressDialog("已取消");
+            Toast.makeText(getBaseContext(), "已取消", Toast.LENGTH_SHORT).show();
         }
 
         @Override
