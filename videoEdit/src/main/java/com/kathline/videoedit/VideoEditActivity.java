@@ -168,229 +168,12 @@ public class VideoEditActivity extends AppCompatActivity {
         enableDisableButtons();
 
         mWaveformView = (WaveformView) findViewById(R.id.waveform);
-        waveformListener = new WaveformView.WaveformListener() {
-            @Override
-            public void waveformTouchStart(float x) {
-                mTouchDragging = true;
-                mTouchStart = x;
-                mTouchInitialOffset = mOffset;
-                mFlingVelocity = 0;
-                mWaveformTouchStartMsec = getCurrentTime();
-            }
-
-            @Override
-            public void waveformTouchMove(float x) {
-                mOffset = trap((int) (mTouchInitialOffset + (mTouchStart - x)));
-                updateDisplay();
-            }
-
-            @Override
-            public void waveformTouchEnd() {
-                mTouchDragging = false;
-                mOffsetGoal = mOffset;
-
-                long elapsedMsec = getCurrentTime() - mWaveformTouchStartMsec;
-                if (elapsedMsec < 300) {
-                    if (mIsPlaying) {
-                        int seekMsec = mWaveformView.pixelsToMillisecs(
-                                (int) (mTouchStart + mOffset));
-                        if (seekMsec >= mPlayStartMsec &&
-                                seekMsec < mPlayEndMsec) {
-                            videoView.seekTo(seekMsec);
-                        } else {
-                            handlePause();
-                        }
-                    } else {
-                        onPlay((int) (mTouchStart + mOffset));
-                    }
-                }
-            }
-
-            @Override
-            public void waveformFling(float x) {
-                mTouchDragging = false;
-                mOffsetGoal = mOffset;
-                mFlingVelocity = (int) (-x);
-                updateDisplay();
-            }
-
-            @Override
-            public void waveformDraw() {
-                mWidth = mWaveformView.getMeasuredWidth();
-                if (mOffsetGoal != mOffset && !mKeyDown)
-                    updateDisplay();
-                else if (mIsPlaying) {
-                    updateDisplay();
-                } else if (mFlingVelocity != 0) {
-                    updateDisplay();
-                }
-            }
-
-            @Override
-            public void waveformZoomIn() {
-                mWaveformView.zoomIn();
-                mStartPos = mWaveformView.getStart();
-                mEndPos = mWaveformView.getEnd();
-                mMaxPos = mWaveformView.maxPos();
-                mOffset = mWaveformView.getOffset();
-                mOffsetGoal = mOffset;
-                updateDisplay();
-            }
-
-            @Override
-            public void waveformZoomOut() {
-                mWaveformView.zoomOut();
-                mStartPos = mWaveformView.getStart();
-                mEndPos = mWaveformView.getEnd();
-                mMaxPos = mWaveformView.maxPos();
-                mOffset = mWaveformView.getOffset();
-                mOffsetGoal = mOffset;
-                updateDisplay();
-            }
-
-            @Override
-            public void waveformImage(int loadSecs) {
-
-            }
-        };
         mWaveformView.setListener(waveformListener);
 
         mMaxPos = 0;
         mLastDisplayedStartPos = -1;
         mLastDisplayedEndPos = -1;
 
-        markerListener = new MarkerView.MarkerListener() {
-            @Override
-            public void markerTouchStart(MarkerView marker, float x) {
-                mTouchDragging = true;
-                mTouchStart = x;
-                mTouchInitialStartPos = mStartPos;
-                mTouchInitialEndPos = mEndPos;
-            }
-
-            @Override
-            public void markerTouchMove(MarkerView marker, float x) {
-                float delta = x - mTouchStart;
-
-                if (marker == mStartMarker) {
-                    mStartPos = trap((int) (mTouchInitialStartPos + delta));
-                    mEndPos = trap((int) (mTouchInitialEndPos + delta));
-                } else {
-                    mEndPos = trap((int) (mTouchInitialEndPos + delta));
-                    if (mEndPos < mStartPos)
-                        mEndPos = mStartPos;
-                }
-                //裁剪时长限制-start
-                if(mEndPos - mStartPos > mMaxCutTimePixels) {
-                    mEndPos = mStartPos + mMaxCutTimePixels;
-                }else if(mEndPos - mStartPos < mMinCutTimePixels) {
-                    mEndPos = mStartPos + mMinCutTimePixels;
-                    if(mEndPos >= mMaxPos) {
-                        mStartPos = mMaxPos - mMinCutTimePixels;
-                        mEndPos = mMaxPos;
-                    }
-                }
-                //裁剪时长限制-end
-                updateDisplay();
-            }
-
-            @Override
-            public void markerTouchEnd(MarkerView marker) {
-                mTouchDragging = false;
-                if (marker == mStartMarker) {
-                    setOffsetGoalStart();
-                } else {
-                    setOffsetGoalEnd();
-                }
-            }
-
-            @Override
-            public void markerFocus(MarkerView marker) {
-                mKeyDown = false;
-                if (marker == mStartMarker) {
-                    setOffsetGoalStartNoUpdate();
-                } else {
-                    setOffsetGoalEndNoUpdate();
-                }
-
-                // Delay updaing the display because if this focus was in
-                // response to a touch event, we want to receive the touch
-                // event too before updating the display.
-                mHandler.postDelayed(new Runnable() {
-                    public void run() {
-                        updateDisplay();
-                    }
-                }, 100);
-            }
-
-            @Override
-            public void markerLeft(MarkerView marker, int velocity) {
-                mKeyDown = true;
-
-                if (marker == mStartMarker) {
-                    int saveStart = mStartPos;
-                    mStartPos = trap(mStartPos - velocity);
-                    mEndPos = trap(mEndPos - (saveStart - mStartPos));
-                    setOffsetGoalStart();
-                }
-
-                if (marker == mEndMarker) {
-                    if (mEndPos == mStartPos) {
-                        mStartPos = trap(mStartPos - velocity);
-                        mEndPos = mStartPos;
-                    } else {
-                        mEndPos = trap(mEndPos - velocity);
-                    }
-
-                    setOffsetGoalEnd();
-                }
-
-                updateDisplay();
-            }
-
-            @Override
-            public void markerRight(MarkerView marker, int velocity) {
-                mKeyDown = true;
-
-                if (marker == mStartMarker) {
-                    int saveStart = mStartPos;
-                    mStartPos += velocity;
-                    if (mStartPos > mMaxPos)
-                        mStartPos = mMaxPos;
-                    mEndPos += (mStartPos - saveStart);
-                    if (mEndPos > mMaxPos)
-                        mEndPos = mMaxPos;
-
-                    setOffsetGoalStart();
-                }
-
-                if (marker == mEndMarker) {
-                    mEndPos += velocity;
-                    if (mEndPos > mMaxPos)
-                        mEndPos = mMaxPos;
-
-                    setOffsetGoalEnd();
-                }
-
-                updateDisplay();
-            }
-
-            @Override
-            public void markerEnter(MarkerView marker) {
-
-            }
-
-            @Override
-            public void markerKeyUp() {
-                mKeyDown = false;
-                updateDisplay();
-            }
-
-            @Override
-            public void markerDraw() {
-
-            }
-        };
         mStartMarker = (MarkerView) findViewById(R.id.startmarker);
         mStartMarker.setListener(markerListener);
         mStartMarker.setAlpha(1f);
@@ -413,9 +196,228 @@ public class VideoEditActivity extends AppCompatActivity {
         mHandler.postDelayed(mTimerRunnable, 100);
     }
 
-    private MarkerView.MarkerListener markerListener;
+    private MarkerView.MarkerListener markerListener = new MarkerView.MarkerListener() {
+        @Override
+        public void markerTouchStart(MarkerView marker, float x) {
+            mTouchDragging = true;
+            mTouchStart = x;
+            mTouchInitialStartPos = mStartPos;
+            mTouchInitialEndPos = mEndPos;
+        }
 
-    private WaveformView.WaveformListener waveformListener;
+        @Override
+        public void markerTouchMove(MarkerView marker, float x) {
+            float delta = x - mTouchStart;
+
+            if (marker == mStartMarker) {
+                mStartPos = trap((int) (mTouchInitialStartPos + delta));
+                mEndPos = trap((int) (mTouchInitialEndPos + delta));
+            } else {
+                mEndPos = trap((int) (mTouchInitialEndPos + delta));
+                if (mEndPos < mStartPos)
+                    mEndPos = mStartPos;
+            }
+            //裁剪时长限制-start
+            if(mEndPos - mStartPos > mMaxCutTimePixels) {
+                mEndPos = mStartPos + mMaxCutTimePixels;
+            }else if(mEndPos - mStartPos < mMinCutTimePixels) {
+                mEndPos = mStartPos + mMinCutTimePixels;
+                if(mEndPos >= mMaxPos) {
+                    mStartPos = mMaxPos - mMinCutTimePixels;
+                    mEndPos = mMaxPos;
+                }
+            }
+            //裁剪时长限制-end
+            updateDisplay();
+        }
+
+        @Override
+        public void markerTouchEnd(MarkerView marker) {
+            mTouchDragging = false;
+            if (marker == mStartMarker) {
+                setOffsetGoalStart();
+            } else {
+                setOffsetGoalEnd();
+            }
+        }
+
+        @Override
+        public void markerFocus(MarkerView marker) {
+            mKeyDown = false;
+            if (marker == mStartMarker) {
+                setOffsetGoalStartNoUpdate();
+            } else {
+                setOffsetGoalEndNoUpdate();
+            }
+
+            // Delay updaing the display because if this focus was in
+            // response to a touch event, we want to receive the touch
+            // event too before updating the display.
+            mHandler.postDelayed(new Runnable() {
+                public void run() {
+                    updateDisplay();
+                }
+            }, 100);
+        }
+
+        @Override
+        public void markerLeft(MarkerView marker, int velocity) {
+            mKeyDown = true;
+
+            if (marker == mStartMarker) {
+                int saveStart = mStartPos;
+                mStartPos = trap(mStartPos - velocity);
+                mEndPos = trap(mEndPos - (saveStart - mStartPos));
+                setOffsetGoalStart();
+            }
+
+            if (marker == mEndMarker) {
+                if (mEndPos == mStartPos) {
+                    mStartPos = trap(mStartPos - velocity);
+                    mEndPos = mStartPos;
+                } else {
+                    mEndPos = trap(mEndPos - velocity);
+                }
+
+                setOffsetGoalEnd();
+            }
+
+            updateDisplay();
+        }
+
+        @Override
+        public void markerRight(MarkerView marker, int velocity) {
+            mKeyDown = true;
+
+            if (marker == mStartMarker) {
+                int saveStart = mStartPos;
+                mStartPos += velocity;
+                if (mStartPos > mMaxPos)
+                    mStartPos = mMaxPos;
+                mEndPos += (mStartPos - saveStart);
+                if (mEndPos > mMaxPos)
+                    mEndPos = mMaxPos;
+
+                setOffsetGoalStart();
+            }
+
+            if (marker == mEndMarker) {
+                mEndPos += velocity;
+                if (mEndPos > mMaxPos)
+                    mEndPos = mMaxPos;
+
+                setOffsetGoalEnd();
+            }
+
+            updateDisplay();
+        }
+
+        @Override
+        public void markerEnter(MarkerView marker) {
+
+        }
+
+        @Override
+        public void markerKeyUp() {
+            mKeyDown = false;
+            updateDisplay();
+        }
+
+        @Override
+        public void markerDraw() {
+
+        }
+    };
+
+    private WaveformView.WaveformListener waveformListener = new WaveformView.WaveformListener() {
+        @Override
+        public void waveformTouchStart(float x) {
+            mTouchDragging = true;
+            mTouchStart = x;
+            mTouchInitialOffset = mOffset;
+            mFlingVelocity = 0;
+            mWaveformTouchStartMsec = getCurrentTime();
+        }
+
+        @Override
+        public void waveformTouchMove(float x) {
+            mOffset = trap((int) (mTouchInitialOffset + (mTouchStart - x)));
+            updateDisplay();
+        }
+
+        @Override
+        public void waveformTouchEnd() {
+            mTouchDragging = false;
+            mOffsetGoal = mOffset;
+
+            long elapsedMsec = getCurrentTime() - mWaveformTouchStartMsec;
+            if (elapsedMsec < 300) {
+                if (mIsPlaying) {
+                    int seekMsec = mWaveformView.pixelsToMillisecs(
+                            (int) (mTouchStart + mOffset));
+                    if (seekMsec >= mPlayStartMsec &&
+                            seekMsec < mPlayEndMsec) {
+                        videoView.seekTo(seekMsec);
+                    } else {
+                        handlePause();
+                    }
+                } else {
+                    onPlay((int) (mTouchStart + mOffset));
+                }
+            }
+        }
+
+        @Override
+        public void waveformFling(float x) {
+            mTouchDragging = false;
+            mOffsetGoal = mOffset;
+            mFlingVelocity = (int) (-x);
+            updateDisplay();
+        }
+
+        @Override
+        public void waveformDraw() {
+            mWidth = mWaveformView.getMeasuredWidth();
+            if (mOffsetGoal != mOffset && !mKeyDown)
+                updateDisplay();
+            else if (mIsPlaying) {
+                updateDisplay();
+            } else if (mFlingVelocity != 0) {
+                updateDisplay();
+            }
+        }
+
+        @Override
+        public void waveformZoomIn() {
+            mWaveformView.zoomIn();
+            mStartPos = mWaveformView.getStart();
+            mEndPos = mWaveformView.getEnd();
+            mMaxPos = mWaveformView.maxPos();
+            mMinCutTimePixels = mWaveformView.secondsToPixels(mMinCutTime);
+            mMaxCutTimePixels = mWaveformView.secondsToPixels(mMaxCutTime);
+            mOffset = mWaveformView.getOffset();
+            mOffsetGoal = mOffset;
+            updateDisplay();
+        }
+
+        @Override
+        public void waveformZoomOut() {
+            mWaveformView.zoomOut();
+            mStartPos = mWaveformView.getStart();
+            mEndPos = mWaveformView.getEnd();
+            mMaxPos = mWaveformView.maxPos();
+            mMinCutTimePixels = mWaveformView.secondsToPixels(mMinCutTime);
+            mMaxCutTimePixels = mWaveformView.secondsToPixels(mMaxCutTime);
+            mOffset = mWaveformView.getOffset();
+            mOffsetGoal = mOffset;
+            updateDisplay();
+        }
+
+        @Override
+        public void waveformImage(int loadSecs) {
+
+        }
+    };
 
     private void addListener() {
         //设置准备监听
@@ -448,6 +450,7 @@ public class VideoEditActivity extends AppCompatActivity {
     }
 
     private void notifyOnPrepared() {
+        videoView.seekTo(0);
         long duration = videoView.getDuration();
         Log.i(TAG, "duration: " + duration);
         Uri videoUri = Uri.parse(videoPath);
@@ -484,9 +487,12 @@ public class VideoEditActivity extends AppCompatActivity {
 
     private boolean isPause = false;
 
-    public void setCutViewVisible(boolean visible) {
-        if(cutView != null) {
-            cutView.setVisibility(visible ? View.VISIBLE : View.GONE);
+    public void setVisible(int[] resIds, boolean visible) {
+        for (int i = 0; i < resIds.length; i++) {
+            View view = findViewById(resIds[i]);
+            if(view != null) {
+                view.setVisibility(visible ? View.VISIBLE : View.GONE);
+            }
         }
     }
 
@@ -497,7 +503,7 @@ public class VideoEditActivity extends AppCompatActivity {
         if (videoView == null) {
             return;
         }
-        videoView.start();
+        videoView.pause();
         enableDisableButtons();
     }
 
@@ -506,7 +512,7 @@ public class VideoEditActivity extends AppCompatActivity {
         super.onResume();
         isPause = false;
         if (mIsPlaying && videoView != null) {
-            videoView.pause();
+            videoView.start();
             enableDisableButtons();
         }
     }

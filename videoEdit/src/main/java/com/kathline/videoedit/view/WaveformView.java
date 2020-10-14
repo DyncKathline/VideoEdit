@@ -361,6 +361,7 @@ public class WaveformView extends View {
     private RectF dst = new RectF();
     private int imageSecs = -1;
     private int imageWidth = -1, imageHeight = -1;
+    private int leftOffset = 0;//左边偏移量
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -385,7 +386,7 @@ public class WaveformView extends View {
 
         double fractionalSecs = mOffset * onePixelInSecs;
         int integerSecs = (int) fractionalSecs;
-        int i = 0;
+        int i = leftOffset;
         int s = -1;
         int l = -1;
         int c = -1;
@@ -430,7 +431,7 @@ public class WaveformView extends View {
                                     src.right = bw;
                                     src.bottom = bh;
                                     int left = l - imageWidth;
-                                    dst.set(left + rect.left, rect.top, left + rect.width(), rect.top + rect.height());
+                                    dst.set(left + rect.left, rect.top, left + rect.width() + 1, rect.top + rect.height());
                                     canvas.drawBitmap(bitmap, src, dst, mSelectedLinePaint);
                                 } else {
                                     if (imageSecs == -1) {
@@ -451,7 +452,7 @@ public class WaveformView extends View {
                                     src.right = bitmap.getWidth();
                                     src.bottom = bitmap.getHeight();
                                     int left = i - imageWidth;
-                                    dst.set(left + rect.left, rect.top, left + rect.width(), rect.top + rect.height());
+                                    dst.set(left + rect.left, rect.top, left + rect.width() + 1, rect.top + rect.height());
                                     canvas.drawBitmap(bitmap, src, dst, mSelectedLinePaint);
                                     s = 1;
                                 } else {
@@ -546,7 +547,7 @@ public class WaveformView extends View {
         // Draw grid
         fractionalSecs = mOffset * onePixelInSecs;
         int integerTimecode = (int) (fractionalSecs / timecodeIntervalSecs);
-        i = 0;
+        i = leftOffset;
         while (i <= width) {
             i++;
             fractionalSecs += onePixelInSecs;
