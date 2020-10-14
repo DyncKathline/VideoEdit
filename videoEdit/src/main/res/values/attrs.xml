@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="MarkerView">
+        <attr name="scale_type_matrix_ext" format="enum">
+            <enum name="left_crop" value="1"/>
+            <enum name="right_crop" value="2"/>
+            <enum name="center_crop" value="3"/>
+        </attr>
+    </declare-styleable>
+</resources>

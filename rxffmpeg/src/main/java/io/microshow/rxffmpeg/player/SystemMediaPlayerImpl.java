@@ -41,7 +41,7 @@ public class SystemMediaPlayerImpl extends SystemMediaPlayer implements TextureV
             mMediaPlayer.reset();
             setDataSource(path);
             setLooping(isLooping);
-            setOnPreparedListener(new RxFFmpegPlayer.OnPreparedListener() {
+            setOnPreparedListener(new OnPreparedListener() {
                 @Override
                 public void onPrepared(IMediaPlayer mediaPlayer) {
                     //已准备好，立即就位 start

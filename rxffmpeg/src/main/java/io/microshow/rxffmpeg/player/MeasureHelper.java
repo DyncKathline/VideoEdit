@@ -137,7 +137,7 @@ public class MeasureHelper {
             int height;//高
             width = Helper.getScreenWidth(view.getContext());
             height = width * 9 / 16;
-            setVideoSizeInfo(new MeasureHelper.VideoSizeInfo(width, height, (float) width / height));
+            setVideoSizeInfo(new VideoSizeInfo(width, height, (float) width / height));
             setVideoLayoutParams(mPlayerView.getTextureView(), mPlayerView.getContainerView());
         }
     }

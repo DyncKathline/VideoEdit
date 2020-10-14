@@ -91,7 +91,7 @@ public class RxFFmpegInvoke {
         return Flowable.create(new FlowableOnSubscribe<RxFFmpegProgress>() {
             @Override
             public void subscribe(final FlowableEmitter<RxFFmpegProgress> emitter) {
-                setFFmpegListener(new RxFFmpegInvoke.IFFmpegListener() {
+                setFFmpegListener(new IFFmpegListener() {
                     @Override
                     public void onFinish() {
                         emitter.onComplete();

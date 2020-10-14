@@ -41,7 +41,7 @@ public class RxFFmpegPlayerImpl extends RxFFmpegPlayer implements TextureView.Su
             stop();
             setDataSource(path);
             setLooping(isLooping);
-            setOnPreparedListener(new RxFFmpegPlayer.OnPreparedListener() {
+            setOnPreparedListener(new OnPreparedListener() {
                 @Override
                 public void onPrepared(IMediaPlayer mediaPlayer) {
                     //已准备好，立即就位 start

@@ -3,7 +3,6 @@ package com.ringdroid.activity;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.ContentResolver;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
@@ -21,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.kathline.videoedit.VideoEditActivity;
 import com.ringdroid.R;
 import com.ringdroid.util.SpacingDecoration;
 
@@ -138,7 +138,7 @@ public class VideoListActivity extends AppCompatActivity implements VideoAdapter
             try {
                 Log.i("TAG----", path);
                 mediaMetadataRetriever.setDataSource(getBaseContext(), Uri.parse(path));
-                duration = Long.parseLong(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
+                duration = Long.parseLong(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)); // 视频时长 毫秒
             } catch (Exception e) {
 //                e.printStackTrace();
             }
