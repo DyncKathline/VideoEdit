@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.text.TextUtils;
@@ -27,11 +28,15 @@ import com.kathline.videoedit.view.MarkerView;
 import com.kathline.videoedit.view.TextureVideoView;
 import com.kathline.videoedit.view.WaveformView;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import io.microshow.rxffmpeg.RxFFmpegCommandList;
 import io.microshow.rxffmpeg.RxFFmpegInvoke;
@@ -41,6 +46,8 @@ public class VideoEditActivity extends AppCompatActivity {
 
     private final String TAG = "VideoEditActivity";
     public static final String VIDEO_PATH = "video_path";
+    public static final String SAVE_NAME = "save_name";
+    private String targetPath;
     private String videoPath;
     private WaveformView mWaveformView;
     private MarkerView mStartMarker;
@@ -126,6 +133,8 @@ public class VideoEditActivity extends AppCompatActivity {
 
     public interface Listener {
         void onCreate(VideoEditActivity activity);
+        void cutFinish(String cutPath, long duration);
+        boolean isPreview();
     }
 
     public static Listener mListener;
@@ -147,6 +156,13 @@ public class VideoEditActivity extends AppCompatActivity {
         mIsPlaying = false;
 
         videoPath = getIntent().getStringExtra(VideoEditActivity.VIDEO_PATH);
+        String saveName = getIntent().getStringExtra(VideoEditActivity.SAVE_NAME);
+        String filePath = Environment.getExternalStorageDirectory().getPath() + File.separator + Environment.DIRECTORY_DCIM + File.separator + "Camera" + File.separator;
+        if(!TextUtils.isEmpty(saveName)) {
+            targetPath = filePath + File.separator + saveName;
+        }else {
+            targetPath = filePath + File.separator + "VIDEO_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + ".mp4";
+        }
         mKeyDown = false;
 
         mHandler = new Handler();
@@ -949,7 +965,6 @@ public class VideoEditActivity extends AppCompatActivity {
                 .subscribe(myRxFFmpegSubscriber);
     }
 
-    private String targetPath = "/storage/emulated/0/avEditor/out2.mp4";
     private long startTime;//记录开始时间
     private long endTime;//记录结束时间
     private float duration;//裁剪时长
@@ -1006,6 +1021,11 @@ public class VideoEditActivity extends AppCompatActivity {
 
         @Override
         public void onFinish() {
+            //刷新媒体库
+            Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+            Uri uri = Uri.fromFile(new File(targetPath));
+            intent.setData(uri);
+            sendBroadcast(intent);
             final AppCompatActivity appCompatActivity = mWeakReference.get();
             if (appCompatActivity != null) {
 //                cancelProgressDialog("处理成功");
@@ -1015,7 +1035,19 @@ public class VideoEditActivity extends AppCompatActivity {
                 if (mProgressDialog != null) {
                     mProgressDialog.cancel();
                 }
-                VideoPreviewActivity.open(getBaseContext(), targetPath);
+                if(mListener != null) {
+                    mListener.cutFinish(targetPath, (long) duration);
+                }
+                boolean isPreview = true;
+                if(mListener != null) {
+                    isPreview = mListener.isPreview();
+                    if(!isPreview) {
+                        finish();
+                    }
+                }
+                if(isPreview) {
+                    VideoPreviewActivity.open(getBaseContext(), targetPath, "video_cut.mp4");
+                }
             }
         }
 
