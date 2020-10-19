@@ -4975,7 +4975,6 @@ static void log_callback_null(void *ptr, int level, const char *fmt, va_list vl)
 
 void cancel_operation() {
     cancel_execute = true;
-    av_log(NULL, AV_LOG_ERROR, "cancel_operation: %d\n", cancel_execute);
 }
 
 int exe_ffmpeg_cmd(int argc, char **argv,
@@ -5048,5 +5047,7 @@ int exe_ffmpeg_cmd(int argc, char **argv,
         return exit_program(69);
 
     exit_program(received_nb_signals ? 255 : main_return_code);
+    ffmpeg_cleanup(0);
+
     return main_return_code;
 }

@@ -11,8 +11,8 @@
 extern "C" {
 #endif
 //小于0失败,>0成功
-int executeFFmpegCommand(int64_t handle, const char *, void (*progressCallBack)(int64_t, int, float));
-void executeFFmpegCancel();
+//int executeFFmpegCommand(int64_t handle, char **, void (*progressCallBack)(int64_t, int, float));
+//void executeFFmpegCancel();
 #ifdef __cplusplus
 }
 #endif

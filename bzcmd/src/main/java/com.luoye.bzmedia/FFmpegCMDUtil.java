@@ -12,7 +12,7 @@ public class FFmpegCMDUtil {
 
     public synchronized static native int showLog(boolean showLog);
 
-    public synchronized static native int executeFFmpegCommand(String command, OnActionListener onActionListener);
+    public synchronized static native int executeFFmpegCommand(String[] command, OnActionListener onActionListener);
 
     /**
      * <p>Cancels an ongoing FFmpeg operation natively. This function does not wait for termination

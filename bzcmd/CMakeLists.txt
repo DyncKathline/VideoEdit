@@ -20,7 +20,6 @@ add_library( # Sets the name of the library.
         src/main/cpp/cmdutilt/ffmpeg_filter.c;
         src/main/cpp/cmdutilt/ffmpeg_opt.c;
         src/main/cpp/cmdutilt/ffmpeg_cmd.c;
-        src/main/cpp/cmdutilt/ffmpeg_core.c;
         )
 
 

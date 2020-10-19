@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 
 import com.luoye.bzmedia.FFmpegCMDUtil;
+import com.luoye.bzmedia.FFmpegCommandList;
 
 import java.util.ArrayList;
 
@@ -72,8 +73,27 @@ public class MainActivity extends AppCompatActivity {
 
                 cmd = "ffmpeg -y -ss 9.08 -t 9.0 -i /storage/emulated/0/qqmusic/mv/儿歌-小手拍拍.mp4 -c:v libx264 -c:a aac -strict experimental -b 500k /storage/emulated/0/avEditor/out2.mp4";
 
-                Log.d(TAG, "cmd: " + cmd);
-                int ret = FFmpegCMDUtil.executeFFmpegCommand(cmd, new FFmpegCMDUtil.OnActionListener() {
+                FFmpegCommandList cmdlist = new FFmpegCommandList();
+                cmdlist.append("-ss");
+                cmdlist.append(9.08 + "");
+                cmdlist.append("-t");
+                cmdlist.append(9.0 + "");
+                cmdlist.append("-i");
+                cmdlist.append("/storage/emulated/0/qqmusic/mv/贝瓦儿歌 - 拔萝卜.mp4");
+                cmdlist.append("-c:v");
+                cmdlist.append("libx264");
+                cmdlist.append("-c:a");
+                cmdlist.append("aac");
+                cmdlist.append("-strict");
+                cmdlist.append("experimental");
+                cmdlist.append("-b");
+                cmdlist.append("500k");
+                cmdlist.append("/storage/emulated/0/avEditor/out2.mp4");
+                String[] commands = cmdlist.build(true);
+
+//                Log.d(TAG, "cmd: " + cmd);
+//                String[] commands = cmd.split(" ");
+                int ret = FFmpegCMDUtil.executeFFmpegCommand(commands, new FFmpegCMDUtil.OnActionListener() {
                     @Override
                     public void progress(final float progress) {
                         //progressTime 可以在结合视频总时长去计算合适的进度值
