@@ -84,3 +84,8 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_showLog(JNIEnv *env, jclass clazz, jboolean
     }
     return 0;
 }
+
+JNIEXPORT void JNICALL
+Java_com_luoye_bzmedia_FFmpegCMDUtil_executeFFmpegCancel(JNIEnv *env, jclass clazz) {
+    executeFFmpegCancel();
+}

@@ -70,15 +70,18 @@ public class MainActivity extends AppCompatActivity {
 //                String cmd = "ffmpeg -y -ss 0 -t 10.123 -i /sdcard/bzmedia/out_na.mp4 -vn -acodec copy /sdcard/bzmedia/out_test.m4a";
 //                String cmd = "ffmpeg -y -ss 0 -t 10.030 -i \"/storage/emulated/0/bzmedia/test.mp3\" -vn -acodec copy /storage/emulated/0/bzmedia/alignment_music_1559539530386715.mp3";
 
-                Log.d(TAG, "cmd=" + cmd);
+                cmd = "ffmpeg -y -ss 9.08 -t 9.0 -i /storage/emulated/0/qqmusic/mv/儿歌-小手拍拍.mp4 -c:v libx264 -c:a aac -strict experimental -b 500k /storage/emulated/0/avEditor/out2.mp4";
+
+                Log.d(TAG, "cmd: " + cmd);
                 int ret = FFmpegCMDUtil.executeFFmpegCommand(cmd, new FFmpegCMDUtil.OnActionListener() {
                     @Override
                     public void progress(final float progress) {
-                        Log.d(TAG, "executeFFmpegCommand progress=" + progress);
+                        //progressTime 可以在结合视频总时长去计算合适的进度值
+                        Log.d(TAG, "executeFFmpegCommand progress=" + progress / 1000000);
                         tv_info.post(new Runnable() {
                             @Override
                             public void run() {
-                                tv_info.setText("progress=" + progress);
+                                tv_info.setText("progress=" + progress / 1000000);
                             }
                         });
                     }
@@ -96,6 +99,10 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "ret=" + ret + "-----time cost=" + (System.currentTimeMillis() - startTime));
             }
         }).start();
+    }
+
+    public void cancel(View view) {
+        FFmpegCMDUtil.executeFFmpegCancel();
     }
 
 }

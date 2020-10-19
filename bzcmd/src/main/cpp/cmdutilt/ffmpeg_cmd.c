@@ -1,4 +1,5 @@
 #include <string.h>
+#include <jni.h>
 #include "ffmpeg.h"
 
 //保证同时只能一个线程执行
@@ -12,11 +13,12 @@ int executeFFmpegCommand(int64_t handle, const char *command,
         return -1;
     }
     av_log(NULL, AV_LOG_DEBUG, "bz_cmd=%s", command);
-    if (!cmdLockHasInit) {
-        pthread_mutex_init(&cmdLock, NULL);//初始化
-        cmdLockHasInit = 1;
-    }
-    pthread_mutex_lock(&cmdLock);
+
+//    if (!cmdLockHasInit) {
+//        pthread_mutex_init(&cmdLock, NULL);//初始化
+//        cmdLockHasInit = 1;
+//    }
+//    pthread_mutex_lock(&cmdLock);
 
     char *pCommand = (char *) command;
     int stingLen = (int) (strlen(command) + 1);
@@ -58,7 +60,10 @@ int executeFFmpegCommand(int64_t handle, const char *command,
     for (int i = 0; i < index; ++i) {
         free(argv[i]);
     }
-    pthread_mutex_unlock(&cmdLock);
+//    pthread_mutex_unlock(&cmdLock);
     return ret;
 }
 
+void executeFFmpegCancel() {
+    cancel_operation();
+}

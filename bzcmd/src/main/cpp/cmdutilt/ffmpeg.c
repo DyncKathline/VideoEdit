@@ -168,6 +168,8 @@ int nb_output_files = 0;
 FilterGraph **filtergraphs;
 int nb_filtergraphs;
 
+volatile bool cancel_execute = false;
+
 #if HAVE_TERMIOS_H
 
 /* init terminal so that we can grab keys */
@@ -347,6 +349,7 @@ sigterm_handler(int sig) {
     int ret;
     received_sigterm = sig;
     received_nb_signals++;
+    av_log(NULL, AV_LOG_ERROR, "sigterm_handler sig: %i , received_sigterm: %i\n", received_sigterm, received_nb_signals);
     term_exit_sigsafe();
     if (received_nb_signals > 3) {
         ret = write(2/*STDERR_FILENO*/, "Received > 3 system signals, hard exiting\n",
@@ -838,25 +841,6 @@ static void write_packet(OutputFile *of, AVPacket *pkt, OutputStream *ost, int u
                pkt->size
         );
     }
-
-    //回调处理
-    enum AVMediaType mediaType;
-    if (ost->hasVideoStream) {
-        mediaType = AVMEDIA_TYPE_VIDEO;
-    } else {
-        mediaType = AVMEDIA_TYPE_AUDIO;
-    }
-    if (NULL != ost->st && NULL != pkt && pkt->dts > 0 && ost->duration > 0 &&
-        NULL != ost->progressCallBack && mediaType == ost->st->codecpar->codec_type) {
-        if (ost->writePacketCount % 2 == 0) {
-            int64_t temp = pkt->dts * 1000 * ost->st->time_base.num /
-                           ost->st->time_base.den;
-            float progress = temp * 1.0f / ost->duration;
-            ost->progressCallBack(ost->callBackHandle, 0, progress);
-        }
-        ost->writePacketCount++;
-    }
-    //回调处理结束
 
     ret = av_interleaved_write_frame(s, pkt);
     if (ret < 0) {
@@ -1709,7 +1693,7 @@ static void print_final_stats(int64_t total_size) {
 
 static void print_report(int is_last_report, int64_t timer_start, int64_t cur_time) {
     AVBPrint buf, buf_script;
-    OutputStream *ost;
+    OutputStream *ost = NULL;
     AVFormatContext *oc;
     int64_t total_size;
     AVCodecContext *enc;
@@ -1723,6 +1707,7 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
     const char *hours_sign;
     int ret;
     float t;
+    float mss;
 
     if (!print_stats && !is_last_report && !progress_avio)
         return;
@@ -1825,6 +1810,7 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
 
     secs = FFABS(pts) / AV_TIME_BASE;
     us = FFABS(pts) % AV_TIME_BASE;
+    mss = secs + ((float) us / AV_TIME_BASE);
     mins = secs / 60;
     secs %= 60;
     hours = mins / 60;
@@ -1842,6 +1828,18 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
         av_bprintf(&buf, "%s%02d:%02d:%02d.%02d ",
                    hours_sign, hours, mins, secs, (100 * us) / AV_TIME_BASE);
     }
+
+    //回调处理
+//    enum AVMediaType mediaType;
+//    if (ost->hasVideoStream) {
+//        mediaType = AVMEDIA_TYPE_VIDEO;
+//    } else {
+//        mediaType = AVMEDIA_TYPE_AUDIO;
+//    }
+    if (NULL != ost->st && NULL != ost->progressCallBack) {
+        ost->progressCallBack(ost->callBackHandle, 0, mss*1000000);
+    }
+    //回调处理结束
 
     if (bitrate < 0) {
         av_bprintf(&buf, "bitrate=N/A");
@@ -4821,6 +4819,11 @@ static int transcode(int64_t callBackHandle, void (*progressCallBack)(int64_t, i
             break;
         }
 
+        if (cancel_execute) {
+            av_log(NULL, AV_LOG_ERROR, "cancel task by user...");
+            break;
+        }
+
         ret = transcode_step();
         if (ret < 0 && ret != AVERROR_EOF) {
             av_log(NULL, AV_LOG_ERROR, "Error while filtering: %s\n", av_err2str(ret));
@@ -4968,6 +4971,11 @@ static int64_t getmaxrss(void) {
 }
 
 static void log_callback_null(void *ptr, int level, const char *fmt, va_list vl) {
+}
+
+void cancel_operation() {
+    cancel_execute = true;
+    av_log(NULL, AV_LOG_ERROR, "cancel_operation: %d\n", cancel_execute);
 }
 
 int exe_ffmpeg_cmd(int argc, char **argv,

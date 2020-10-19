@@ -14,8 +14,14 @@ public class FFmpegCMDUtil {
 
     public synchronized static native int executeFFmpegCommand(String command, OnActionListener onActionListener);
 
+    /**
+     * <p>Cancels an ongoing FFmpeg operation natively. This function does not wait for termination
+     * to complete and returns immediately.
+     */
+    public synchronized native static void executeFFmpegCancel();
+
     public interface OnActionListener {
-        void progress(float progress);
+        void progress(float progressTime);
 
         void fail();
 
