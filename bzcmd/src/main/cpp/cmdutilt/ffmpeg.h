@@ -558,7 +558,7 @@ typedef struct OutputStream {
 
     int64_t callBackHandle;
 
-    void (*progressCallBack)(int64_t, int, float);
+    void (*progressCallBack)(int64_t, int, long);
 
     int hasVideoStream;
 
@@ -699,7 +699,7 @@ int hw_device_setup_for_encode(OutputStream *ost);
 int hwaccel_decode_init(AVCodecContext *avctx);
 
 int exe_ffmpeg_cmd(int argc, char **argv,
-                   int64_t handle, void (*progressCallBack)(int64_t, int, float));
+                   int64_t handle, void (*progressCallBack)(int64_t, int, long));
 
 void cancel_operation();
 

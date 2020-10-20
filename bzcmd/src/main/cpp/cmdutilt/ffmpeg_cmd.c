@@ -31,12 +31,11 @@ void log_call_back(void *ptr, int level, const char *fmt, va_list vl) {
     }
 }
 
-void progressCallBack(int64_t handle, int what, float progress) {
+void progressCallBack(int64_t handle, int secs, long progress) {
     if (handle != 0) {
         struct CallBackInfo *onActionListener = (struct CallBackInfo *) (handle);
         JNIEnv *env = onActionListener->env;
-        (*env)->CallVoidMethod(env, onActionListener->obj, onActionListener->methodID,
-                               progress);
+        (*env)->CallVoidMethod(env, onActionListener->obj, onActionListener->methodID, secs, progress);
     }
 }
 
@@ -65,7 +64,7 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_executeFFmpegCommand(JNIEnv *env,
     int ret = 0;
     if (NULL != actionCallBack) {
         jclass actionClass = (*env)->GetObjectClass(env, actionCallBack);
-        jmethodID progressMID = (*env)->GetMethodID(env, actionClass, "progress", "(F)V");
+        jmethodID progressMID = (*env)->GetMethodID(env, actionClass, "progress", "(IJ)V");
         jmethodID failMID = (*env)->GetMethodID(env, actionClass, "fail", "()V");
         jmethodID successMID = (*env)->GetMethodID(env, actionClass, "success", "()V");
 

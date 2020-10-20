@@ -21,7 +21,12 @@ public class FFmpegCMDUtil {
     public synchronized native static void executeFFmpegCancel();
 
     public interface OnActionListener {
-        void progress(float progressTime);
+        /**
+         *
+         * @param secs              处理进度，单位秒
+         * @param progressTime      处理进度，单位纳秒
+         */
+        void progress(int secs, long progressTime);
 
         void fail();
 

@@ -75,9 +75,9 @@ public class MainActivity extends AppCompatActivity {
 
                 FFmpegCommandList cmdlist = new FFmpegCommandList();
                 cmdlist.append("-ss");
-                cmdlist.append(9.08 + "");
+                cmdlist.append(12 + "");
                 cmdlist.append("-t");
-                cmdlist.append(9.0 + "");
+                cmdlist.append(10 + "");
                 cmdlist.append("-i");
                 cmdlist.append("/storage/emulated/0/qqmusic/mv/贝瓦儿歌 - 拔萝卜.mp4");
                 cmdlist.append("-c:v");
@@ -95,13 +95,13 @@ public class MainActivity extends AppCompatActivity {
 //                String[] commands = cmd.split(" ");
                 int ret = FFmpegCMDUtil.executeFFmpegCommand(commands, new FFmpegCMDUtil.OnActionListener() {
                     @Override
-                    public void progress(final float progress) {
+                    public void progress(int secs, final long progress) {
                         //progressTime 可以在结合视频总时长去计算合适的进度值
-                        Log.d(TAG, "executeFFmpegCommand progress=" + progress / 1000000);
+                        Log.d(TAG, "executeFFmpegCommand secs= " + secs + ", progress=" + progress / 1000000f);
                         tv_info.post(new Runnable() {
                             @Override
                             public void run() {
-                                tv_info.setText("progress=" + progress / 1000000);
+                                tv_info.setText("progress=" + progress / 1000000f);
                             }
                         });
                     }

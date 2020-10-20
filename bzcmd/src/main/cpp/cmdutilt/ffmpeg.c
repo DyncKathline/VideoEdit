@@ -1707,7 +1707,6 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
     const char *hours_sign;
     int ret;
     float t;
-    float mss;
 
     if (!print_stats && !is_last_report && !progress_avio)
         return;
@@ -1801,16 +1800,19 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
             vid = 1;
         }
         /* compute min output value */
-        if (av_stream_get_end_pts(ost->st) != AV_NOPTS_VALUE)
+        if (av_stream_get_end_pts(ost->st) != AV_NOPTS_VALUE) {
             pts = FFMAX(pts, av_rescale_q(av_stream_get_end_pts(ost->st),
                                           ost->st->time_base, AV_TIME_BASE_Q));
+        }
         if (is_last_report)
             nb_frames_drop += ost->last_dropped;
+    }
+    if(pts < 0) {
+        return;
     }
 
     secs = FFABS(pts) / AV_TIME_BASE;
     us = FFABS(pts) % AV_TIME_BASE;
-    mss = secs + ((float) us / AV_TIME_BASE);
     mins = secs / 60;
     secs %= 60;
     hours = mins / 60;
@@ -1828,6 +1830,8 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
         av_bprintf(&buf, "%s%02d:%02d:%02d.%02d ",
                    hours_sign, hours, mins, secs, (100 * us) / AV_TIME_BASE);
     }
+    av_log(NULL, AV_LOG_ERROR, "%s, %02d:%02d:%02d.%02d ",
+           hours_sign, hours, mins, secs, (100 * us) / AV_TIME_BASE);
 
     //回调处理
 //    enum AVMediaType mediaType;
@@ -1836,8 +1840,9 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
 //    } else {
 //        mediaType = AVMEDIA_TYPE_AUDIO;
 //    }
+//    av_log(NULL, AV_LOG_ERROR, "pts: %d, secs: %d, us: %d\n", pts, secs, us);
     if (NULL != ost->st && NULL != ost->progressCallBack) {
-        ost->progressCallBack(ost->callBackHandle, 0, mss*1000000);
+        ost->progressCallBack(ost->callBackHandle, secs, pts);
     }
     //回调处理结束
 
@@ -4978,7 +4983,7 @@ void cancel_operation() {
 }
 
 int exe_ffmpeg_cmd(int argc, char **argv,
-                   int64_t handle, void (*progressCallBack)(int64_t, int, float)) {
+                   int64_t handle, void (*progressCallBack)(int64_t, int, long)) {
     int i, ret;
     BenchmarkTimeStamps ti;
 
@@ -5047,7 +5052,6 @@ int exe_ffmpeg_cmd(int argc, char **argv,
         return exit_program(69);
 
     exit_program(received_nb_signals ? 255 : main_return_code);
-    ffmpeg_cleanup(0);
 
     return main_return_code;
 }
