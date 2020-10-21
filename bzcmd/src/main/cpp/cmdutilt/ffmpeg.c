@@ -168,7 +168,7 @@ int nb_output_files = 0;
 FilterGraph **filtergraphs;
 int nb_filtergraphs;
 
-volatile bool cancel_execute = false;
+int request_cancel_exe_ffmpeg_cmd = 0;
 
 #if HAVE_TERMIOS_H
 
@@ -4811,6 +4811,10 @@ static int transcode(int64_t callBackHandle, void (*progressCallBack)(int64_t, i
 #endif
 
     while (!received_sigterm) {
+        if (request_cancel_exe_ffmpeg_cmd) {
+            av_log(NULL, AV_LOG_ERROR, "request_cancel_exe_ffmpeg_cmd\n");
+            break;
+        }
         int64_t cur_time = av_gettime_relative();
 
         /* if 'q' pressed, exits */
@@ -4821,11 +4825,6 @@ static int transcode(int64_t callBackHandle, void (*progressCallBack)(int64_t, i
         /* check if there's any stream where output is still needed */
         if (!need_output()) {
             av_log(NULL, AV_LOG_VERBOSE, "No more output streams to write to, finishing.\n");
-            break;
-        }
-
-        if (cancel_execute) {
-            av_log(NULL, AV_LOG_ERROR, "cancel task by user...");
             break;
         }
 
@@ -4849,7 +4848,9 @@ static int transcode(int64_t callBackHandle, void (*progressCallBack)(int64_t, i
             process_input_packet(ist, NULL, 0);
         }
     }
-    flush_encoders();
+    if (!request_cancel_exe_ffmpeg_cmd) {
+        flush_encoders();
+    }
 
     term_exit();
 
@@ -4902,7 +4903,11 @@ static int transcode(int64_t callBackHandle, void (*progressCallBack)(int64_t, i
     hw_device_free_all();
 
     /* finished ! */
-    ret = 0;
+    if (!request_cancel_exe_ffmpeg_cmd) {
+        ret = 0;
+    } else{
+        ret = 1;
+    }
 
     fail:
 #if HAVE_THREADS
@@ -4978,14 +4983,11 @@ static int64_t getmaxrss(void) {
 static void log_callback_null(void *ptr, int level, const char *fmt, va_list vl) {
 }
 
-void cancel_operation() {
-    cancel_execute = true;
-}
-
 int exe_ffmpeg_cmd(int argc, char **argv,
                    int64_t handle, void (*progressCallBack)(int64_t, int, long)) {
     int i, ret;
     BenchmarkTimeStamps ti;
+    request_cancel_exe_ffmpeg_cmd = 0;
 
     init_dynload();
 
@@ -5051,7 +5053,11 @@ int exe_ffmpeg_cmd(int argc, char **argv,
     if ((decode_error_stat[0] + decode_error_stat[1]) * max_error_rate < decode_error_stat[1])
         return exit_program(69);
 
-    exit_program(received_nb_signals ? 255 : main_return_code);
+    int result = exit_program(received_nb_signals || request_cancel_exe_ffmpeg_cmd ? 255 : main_return_code);
 
-    return main_return_code;
+    return result;
+}
+
+int cancel_exe_ffmpeg_cmd() {
+    request_cancel_exe_ffmpeg_cmd = 1;
 }

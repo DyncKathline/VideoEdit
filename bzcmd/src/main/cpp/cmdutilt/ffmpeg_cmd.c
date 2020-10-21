@@ -4,8 +4,9 @@
 #include <android/log.h>
 #include <libavutil/log.h>
 
-/** Defines tag used for Android logging. */
-#define LIB_NAME "ffmpeg-cmd"
+//保证同时只能一个线程执行
+static pthread_mutex_t cmdLock;
+static int cmdLockHasInit = 0;
 
 typedef struct CallBackInfo {
     JNIEnv *env;
@@ -44,19 +45,25 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_executeFFmpegCommand(JNIEnv *env,
                                                           jclass type,
                                                           jobjectArray stringArray,
                                                           jobject actionCallBack) {
+    if (!cmdLockHasInit) {
+        pthread_mutex_init(&cmdLock, NULL);//初始化
+        cmdLockHasInit = 1;
+    }
+    pthread_mutex_lock(&cmdLock);
+
     int cmdNum = 0;
     char **argv = NULL;//命令集 二维指针
-    jstring *strr = NULL;
+    jstring *tempArray = NULL;
 
     if (stringArray != NULL) {
         cmdNum = (*env)->GetArrayLength(env, stringArray);
         argv = (char **) malloc(sizeof(char *) * cmdNum);
-        strr = (jstring *) malloc(sizeof(jstring) * cmdNum);
+        tempArray = (jstring *) malloc(sizeof(jstring) * cmdNum);
 
         int i = 0;
         for (i = 0; i < cmdNum; ++i) {//转换
-            strr[i] = (jstring)(*env)->GetObjectArrayElement(env, stringArray, i);
-            argv[i] = (char *) (*env)->GetStringUTFChars(env, strr[i], 0);
+            tempArray[i] = (jstring)(*env)->GetObjectArrayElement(env, stringArray, i);
+            argv[i] = (char *) (*env)->GetStringUTFChars(env, tempArray[i], 0);
         }
 
     }
@@ -67,6 +74,7 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_executeFFmpegCommand(JNIEnv *env,
         jmethodID progressMID = (*env)->GetMethodID(env, actionClass, "progress", "(IJ)V");
         jmethodID failMID = (*env)->GetMethodID(env, actionClass, "fail", "()V");
         jmethodID successMID = (*env)->GetMethodID(env, actionClass, "success", "()V");
+        jmethodID cancelMID = (*env)->GetMethodID(env, actionClass, "cancel", "()V");
 
 
         CallBackInfo onActionListener;
@@ -75,18 +83,23 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_executeFFmpegCommand(JNIEnv *env,
         onActionListener.methodID = progressMID;
 
         ret = exe_ffmpeg_cmd(cmdNum, argv, (int64_t) (&onActionListener), progressCallBack);
+        av_log(NULL, AV_LOG_ERROR, "exe_ffmpeg_cmd ret=%d\n", ret);
         if (ret < 0) {
             (*env)->CallVoidMethod(env, actionCallBack, failMID);
         } else {
-            (*env)->CallVoidMethod(env, actionCallBack, successMID);
+            if(ret == 255) {
+                (*env)->CallVoidMethod(env, actionCallBack, cancelMID);
+            } else {
+                (*env)->CallVoidMethod(env, actionCallBack, successMID);
+            }
         }
         (*env)->DeleteLocalRef(env, actionClass);
     } else {
         ret = exe_ffmpeg_cmd(0, argv, 0, NULL);
     }
 
-    // CLEANUP
-    free(strr);
+    free(tempArray);
+    pthread_mutex_unlock(&cmdLock);
     return ret;
 }
 
@@ -100,7 +113,7 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_showLog(JNIEnv *env, jclass clazz, jboolean
     return 0;
 }
 
-JNIEXPORT void JNICALL
-Java_com_luoye_bzmedia_FFmpegCMDUtil_executeFFmpegCancel(JNIEnv *env, jclass clazz) {
-    cancel_operation();
+JNIEXPORT jint JNICALL
+Java_com_luoye_bzmedia_FFmpegCMDUtil_cancelExecuteFFmpegCommand(JNIEnv *env, jclass clazz) {
+    return cancel_exe_ffmpeg_cmd();
 }

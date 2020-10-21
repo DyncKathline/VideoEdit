@@ -10,15 +10,17 @@ public class FFmpegCMDUtil {
         System.loadLibrary("bzffmpegcmd");
     }
 
-    public synchronized static native int showLog(boolean showLog);
-
-    public synchronized static native int executeFFmpegCommand(String[] command, OnActionListener onActionListener);
+    public static native int showLog(boolean showLog);
 
     /**
-     * <p>Cancels an ongoing FFmpeg operation natively. This function does not wait for termination
-     * to complete and returns immediately.
+     * Adding a thread lock at the native to allow only single-threaded execution
      */
-    public synchronized native static void executeFFmpegCancel();
+    public static native int executeFFmpegCommand(String[] command, OnActionListener onActionListener);
+
+    /**
+     * This method and the executeFFmpegCommand method must be called in separate threads.
+     */
+    public static native int cancelExecuteFFmpegCommand();
 
     public interface OnActionListener {
         /**
@@ -31,5 +33,7 @@ public class FFmpegCMDUtil {
         void fail();
 
         void success();
+
+        void cancel();
     }
 }
