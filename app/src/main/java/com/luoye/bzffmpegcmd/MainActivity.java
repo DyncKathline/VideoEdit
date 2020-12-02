@@ -1,18 +1,23 @@
 package com.luoye.bzffmpegcmd;
 
 import android.Manifest;
+import android.media.MediaMetadataRetriever;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.luoye.bzmedia.FFmpegCMDUtil;
 import com.luoye.bzmedia.FFmpegCommandList;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+
+import wseemann.media.FFmpegMediaMetadataRetriever;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -120,6 +125,19 @@ public class MainActivity extends AppCompatActivity {
                 FFmpegCMDUtil.cancelExecuteFFmpegCommand();
             }
         }).start();
+    }
+
+    public void ffmpeg_mediametadataretriever(View view) {
+        FFmpegMediaMetadataRetriever mediaMetadataRetriever = new FFmpegMediaMetadataRetriever();
+        try {
+            mediaMetadataRetriever.setDataSource("http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4");
+            FFmpegMediaMetadataRetriever.Metadata metadata = mediaMetadataRetriever.getMetadata();
+            Log.i("kath", "ffmpeg_mediametadataretriever");
+        } catch (IllegalArgumentException ex) {
+            ex.printStackTrace();
+        } finally {
+            mediaMetadataRetriever.release();
+        }
     }
 
 }
