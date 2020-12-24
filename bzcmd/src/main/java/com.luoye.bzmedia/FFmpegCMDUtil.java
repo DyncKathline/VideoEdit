@@ -22,6 +22,8 @@ public class FFmpegCMDUtil {
      */
     public static native int cancelExecuteFFmpegCommand();
 
+    public static native FMediaMetadata readAVInfo(String path);
+
     public interface OnActionListener {
         /**
          *
