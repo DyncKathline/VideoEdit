@@ -32,7 +32,7 @@ public class FFmpegCMDUtil {
          */
         void progress(int secs, long progressTime);
 
-        void fail();
+        void fail(int code, String message);
 
         void success();
 

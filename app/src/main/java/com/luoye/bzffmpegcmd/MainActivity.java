@@ -1,21 +1,31 @@
 package com.luoye.bzffmpegcmd;
 
 import android.Manifest;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.gson.Gson;
+import com.luoye.bzffmpegcmd.fileStoreSAF.FileUtils;
+import com.luoye.bzffmpegcmd.fileStoreSAF.MimeType;
+import com.luoye.bzffmpegcmd.fileStoreSAF.SAF;
+import com.luoye.bzffmpegcmd.fileStoreSAF.SAFListener;
+import com.luoye.bzffmpegcmd.fileStoreSAF.ZFileBean;
 import com.luoye.bzmedia.FFmpegCMDUtil;
 import com.luoye.bzmedia.FFmpegCommandList;
 import com.luoye.bzmedia.FMediaMetadata;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import wseemann.media.FFmpegMediaMetadataRetriever;
@@ -41,24 +51,25 @@ public class MainActivity extends AppCompatActivity {
         FFmpegCMDUtil.showLog(BuildConfig.DEBUG);
     }
 
-    private boolean requestPermission() {
-        ArrayList<String> permissionList = new ArrayList<>();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && !PermissionUtil.isPermissionGranted(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
-            permissionList.add(Manifest.permission.READ_EXTERNAL_STORAGE);
-        }
-        if (!PermissionUtil.isPermissionGranted(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            permissionList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        }
-        String[] permissionStrings = new String[permissionList.size()];
-        permissionList.toArray(permissionStrings);
+    private void requestPermission() {
+        PermissionUtil.getInstance().with(this)
+                .requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, new PermissionUtil.PermissionListener() {
 
-        if (permissionList.size() > 0) {
-            PermissionUtil.requestPermission(this, permissionStrings, PermissionUtil.CODE_REQ_PERMISSION);
-            return false;
-        } else {
-            Log.d(TAG, "Have all permissions");
-            return true;
-        }
+                    @Override
+                    public void onGranted() {
+
+                    }
+
+                    @Override
+                    public void onDenied(List<String> deniedPermission) {
+
+                    }
+
+                    @Override
+                    public void onShouldShowRationale(List<String> deniedPermission) {
+
+                    }
+                });
     }
 
     public void start(View view) {
@@ -100,8 +111,8 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void fail() {
-                        Log.e(TAG, "executeFFmpegCommand fail");
+                    public void fail(int code, String message) {
+                        Log.e(TAG, "executeFFmpegCommand fail" + code + " " + message);
                     }
 
                     @Override
@@ -155,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
                 cmdlist.append("-s");
                 int width = fMediaMetadata.getVideoWidth();
                 int height = fMediaMetadata.getVideoHeight();
-                if(fMediaMetadata.getVideoWidth() > 1920) {
+                if (fMediaMetadata.getVideoWidth() > 1920) {
                     width = width / 2;
                     height = height / 2;
                 }
@@ -181,8 +192,8 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void fail() {
-                        Log.e(TAG, "executeFFmpegCommand fail");
+                    public void fail(int code, String message) {
+                        Log.e(TAG, "executeFFmpegCommand fail " + code + " " + message);
                     }
 
                     @Override
@@ -198,6 +209,29 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "ret=" + ret + "-----time cost=" + (System.currentTimeMillis() - startTime));
             }
         }).start();
+    }
+
+    public void saf(View view) {
+        final SAF saf = SAF.with(this);
+        saf.requestCode(0)
+                .mimeTypes(new String[]{MimeType._pdf.getValue(), MimeType._image.getValue()})
+                .maxCount(2)
+                .request(new SAFListener() {
+
+                    @Override
+                    public void onResult(int requestCode, int resultCode, Intent data) {
+                        List<ZFileBean> fileList = FileUtils.getSelectData(MainActivity.this, requestCode, resultCode, data, saf);
+                        if (fileList.size() <= 0) {
+                            return;
+                        }
+                        Toast.makeText(MainActivity.this, "获取成功，请查看控制台", Toast.LENGTH_SHORT).show();
+                        StringBuilder sb = new StringBuilder();
+                        for (ZFileBean bean : fileList) {
+                            sb.append(bean.toString()).append("\n\n");
+                        }
+                        Log.i(SAF.TAG, sb.toString());
+                    }
+                });
     }
 
     public void ffmpeg_mediametadataretriever(View view) {

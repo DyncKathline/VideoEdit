@@ -3459,6 +3459,7 @@ int ffmpeg_parse_options(int argc, char **argv) {
                             FF_ARRAY_ELEMS(groups));
     if (ret < 0) {
         av_log(NULL, AV_LOG_FATAL, "Error splitting the argument list: ");
+        ret = -100;
         goto fail;
     }
 
@@ -3466,6 +3467,7 @@ int ffmpeg_parse_options(int argc, char **argv) {
     ret = parse_optgroup(NULL, &octx.global_opts);
     if (ret < 0) {
         av_log(NULL, AV_LOG_FATAL, "Error parsing global options: ");
+        ret = -101;
         goto fail;
     }
 
@@ -3476,6 +3478,7 @@ int ffmpeg_parse_options(int argc, char **argv) {
     ret = open_files(&octx.groups[GROUP_INFILE], "input", open_input_file);
     if (ret < 0) {
         av_log(NULL, AV_LOG_FATAL, "Error opening input files: ");
+        ret = -102;
         goto fail;
     }
 
@@ -3483,6 +3486,7 @@ int ffmpeg_parse_options(int argc, char **argv) {
     ret = init_complex_filters();
     if (ret < 0) {
         av_log(NULL, AV_LOG_FATAL, "Error initializing complex filters.\n");
+        ret = -103;
         goto fail;
     }
 
@@ -3490,6 +3494,7 @@ int ffmpeg_parse_options(int argc, char **argv) {
     ret = open_files(&octx.groups[GROUP_OUTFILE], "output", open_output_file);
     if (ret < 0) {
         av_log(NULL, AV_LOG_FATAL, "Error opening output files: ");
+        ret = -104;
         goto fail;
     }
 

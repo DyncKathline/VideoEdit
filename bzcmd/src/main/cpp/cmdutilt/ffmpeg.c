@@ -5015,7 +5015,7 @@ int exe_ffmpeg_cmd(int argc, char **argv,
     /* parse options and open all input/output files */
     ret = ffmpeg_parse_options(argc, argv);
     if (ret < 0)
-        return exit_program(1);
+        return exit_program(ret);
 
     if (nb_output_files <= 0 && nb_input_files == 0) {
         show_usage();

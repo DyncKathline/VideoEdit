@@ -76,7 +76,7 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_executeFFmpegCommand(JNIEnv *env,
     if (NULL != actionCallBack) {
         jclass actionClass = (*env)->GetObjectClass(env, actionCallBack);
         jmethodID progressMID = (*env)->GetMethodID(env, actionClass, "progress", "(IJ)V");
-        jmethodID failMID = (*env)->GetMethodID(env, actionClass, "fail", "()V");
+        jmethodID failMID = (*env)->GetMethodID(env, actionClass, "fail", "(ILjava/lang/String;)V");
         jmethodID successMID = (*env)->GetMethodID(env, actionClass, "success", "()V");
         jmethodID cancelMID = (*env)->GetMethodID(env, actionClass, "cancel", "()V");
 
@@ -87,9 +87,22 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_executeFFmpegCommand(JNIEnv *env,
         onActionListener.methodID = progressMID;
 
         ret = exe_ffmpeg_cmd(cmdNum, argv, (int64_t) (&onActionListener), progressCallBack);
-        av_log(NULL, AV_LOG_ERROR, "exe_ffmpeg_cmd ret=%d\n", ret);
-        if (ret < 0) {
-            (*env)->CallVoidMethod(env, actionCallBack, failMID);
+//        av_log(NULL, AV_LOG_ERROR, "exe_ffmpeg_cmd ret=%d\n", ret);
+        LOGD("exe_ffmpeg_cmd ret=%d\n", ret);
+        if (ret < 0) {//这里返回错误码可以在cpp\cmdutilt\ffmpeg_opt.c中的ffmpeg_parse_options方法中查看
+            jstring error = "";
+            if(ret == -100) {
+                error = "Error splitting the argument list: ";
+            } else if(ret == -101) {
+                error = "Error parsing global options: ";
+            } else if(ret == -102) {
+                error = "Error opening input files: ";
+            } else if(ret == -103) {
+                error = "Error initializing complex filters.\n";
+            } else if(ret == -104) {
+                error = "Error opening output files: ";
+            }
+            (*env)->CallVoidMethod(env, actionCallBack, failMID, ret, (*env)->NewStringUTF(env, error));
         } else {
             if (ret == 255) {
                 (*env)->CallVoidMethod(env, actionCallBack, cancelMID);
@@ -161,7 +174,7 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_readAVInfo(JNIEnv *env, jclass clazz, jstri
     //以输入方式打开一个媒体文件,也即源文件
     int ok = avformat_open_input(&pfmtCxt, path, NULL, NULL);
     if (ok != 0) {
-        LOGD("Could not open file.");
+        LOGD("Couldn't open file %s: %d(%s)", path, ok, av_err2str(ok));
     }
 
     //通过读取媒体文件的中的包来获取媒体文件中的流信息,对于没有头信息的文件如(mpeg)是非常有用的
