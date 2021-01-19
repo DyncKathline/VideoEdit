@@ -28,6 +28,6 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
-    api 'com.github.microshow:RxFFmpeg:4.8.0-lite'
-//    api project(':rxffmpeg')
+//    api 'com.github.microshow:RxFFmpeg:4.8.0-lite'
+    api project(':bzcmd')
 }

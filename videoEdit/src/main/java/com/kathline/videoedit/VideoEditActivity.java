@@ -27,6 +27,8 @@ import com.kathline.videoedit.view.CutView;
 import com.kathline.videoedit.view.MarkerView;
 import com.kathline.videoedit.view.TextureVideoView;
 import com.kathline.videoedit.view.WaveformView;
+import com.luoye.bzmedia.FFmpegCMDUtil;
+import com.luoye.bzmedia.FFmpegCommandList;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -37,10 +39,6 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-
-import io.microshow.rxffmpeg.RxFFmpegCommandList;
-import io.microshow.rxffmpeg.RxFFmpegInvoke;
-import io.microshow.rxffmpeg.RxFFmpegSubscriber;
 
 public class VideoEditActivity extends AppCompatActivity {
 
@@ -158,6 +156,10 @@ public class VideoEditActivity extends AppCompatActivity {
         videoPath = getIntent().getStringExtra(VideoEditActivity.VIDEO_PATH);
         String saveName = getIntent().getStringExtra(VideoEditActivity.SAVE_NAME);
         String filePath = Environment.getExternalStorageDirectory().getPath() + File.separator + Environment.DIRECTORY_DCIM + File.separator + "Camera" + File.separator;
+        File parentFile = new File(filePath);
+        if(!parentFile.exists()) {
+            parentFile.mkdirs();
+        }
         if(!TextUtils.isEmpty(saveName)) {
             targetPath = filePath + File.separator + saveName;
         }else {
@@ -938,7 +940,7 @@ public class VideoEditActivity extends AppCompatActivity {
         float startTime = Float.parseFloat(formatTime(mStartPos));
         float endTime = Float.parseFloat(formatTime(mEndPos));
         duration = endTime - startTime;
-        RxFFmpegCommandList cmdlist = new RxFFmpegCommandList();
+        FFmpegCommandList cmdlist = new FFmpegCommandList();
         cmdlist.append("-ss");
         cmdlist.append(startTime + "");
         cmdlist.append("-t");
@@ -954,15 +956,15 @@ public class VideoEditActivity extends AppCompatActivity {
         cmdlist.append("-b");
         cmdlist.append("500k");
         cmdlist.append(targetPath);
-        String[] commands = cmdlist.build(true);
+        final String[] commands = cmdlist.build(true);
 
-        openProgressDialog();
-        MyRxFFmpegSubscriber myRxFFmpegSubscriber = new MyRxFFmpegSubscriber(this);
-
-        //开始执行FFmpeg命令
-        RxFFmpegInvoke.getInstance()
-                .runCommandRxJava(commands)
-                .subscribe(myRxFFmpegSubscriber);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                //开始执行FFmpeg命令
+                FFmpegCMDUtil.executeFFmpegCommand(commands, new MyFFmpegSubscriber(VideoEditActivity.this));
+            }
+        }).start();
     }
 
     private long startTime;//记录开始时间
@@ -995,12 +997,12 @@ public class VideoEditActivity extends AppCompatActivity {
      * 设置进度条
      */
     private void setProgressDialog(int progress, long progressTime) {
+        Log.i("RxTAG", "progress: " + progress + ", progressTime: " + progressTime + ", ---: " + (int) ((double) progressTime / 1000000 / 10 * 100f));
         if (mProgressDialog != null) {
-            Log.i("RxTAG", "progress: " + progress + "progressTime: " + progressTime + ", ---: " + (int) ((double) progressTime / 1000000 / 10 * 100f));
             mProgressDialog.setProgress((int) ((double) progressTime / 1000000 / duration * 100f));
             //progressTime 可以在结合视频总时长去计算合适的进度值
             double time = (double) progressTime / 1000000;
-            mProgressDialog.setMessage("已耗时" + String.format("%.2f", time) + "秒");
+            mProgressDialog.setMessage("已处理" + String.format("%.2f", time) + "秒");
         }
     }
 
@@ -1011,64 +1013,91 @@ public class VideoEditActivity extends AppCompatActivity {
     }
 
     // 这里设为静态内部类，防止内存泄露
-    public class MyRxFFmpegSubscriber extends RxFFmpegSubscriber {
+    public class MyFFmpegSubscriber extends FFmpegCMDUtil.OnActionListener {
 
         private WeakReference<AppCompatActivity> mWeakReference;
 
-        public MyRxFFmpegSubscriber(AppCompatActivity appCompatActivity) {
+        public MyFFmpegSubscriber(AppCompatActivity appCompatActivity) {
             mWeakReference = new WeakReference<>(appCompatActivity);
         }
 
         @Override
-        public void onFinish() {
-            //刷新媒体库
-            Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-            Uri uri = Uri.fromFile(new File(targetPath));
-            intent.setData(uri);
-            sendBroadcast(intent);
-            final AppCompatActivity appCompatActivity = mWeakReference.get();
-            if (appCompatActivity != null) {
-//                cancelProgressDialog("处理成功");
-                endTime = System.nanoTime();
-                String takeUpTime = Utils.convertUsToTime((endTime - startTime) / 1000, false);
-                Toast.makeText(getBaseContext(), "耗时：" + takeUpTime, Toast.LENGTH_SHORT).show();
-                if (mProgressDialog != null) {
-                    mProgressDialog.cancel();
+        public void start() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    openProgressDialog();
                 }
-                if(mListener != null) {
-                    mListener.cutFinish(targetPath, (long) duration);
+            });
+        }
+
+        @Override
+        public void progress(final int secs, final long progressTime) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    //progressTime 可以在结合视频总时长去计算合适的进度值
+                    setProgressDialog(secs, progressTime);
                 }
-                boolean isPreview = true;
-                if(mListener != null) {
-                    isPreview = mListener.isPreview();
-                    if(!isPreview) {
-                        finish();
+            });
+        }
+
+        @Override
+        public void fail(final int code, final String message) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    final AppCompatActivity appCompatActivity = mWeakReference.get();
+                    if (appCompatActivity != null) {
+                        cancelProgressDialog("出错了 onError：" + code + " " + message);
                     }
                 }
-                if(isPreview) {
-                    VideoPreviewActivity.open(getBaseContext(), targetPath, "video_cut.mp4");
+            });
+        }
+
+        @Override
+        public void success() {//刷新媒体库
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                    Uri uri = Uri.fromFile(new File(targetPath));
+                    intent.setData(uri);
+                    sendBroadcast(intent);
+                    final AppCompatActivity appCompatActivity = mWeakReference.get();
+                    if (appCompatActivity != null) {
+                        endTime = System.nanoTime();
+                        String takeUpTime = Utils.convertUsToTime((endTime - startTime) / 1000, false);
+                        Toast.makeText(getBaseContext(), "耗时：" + takeUpTime, Toast.LENGTH_SHORT).show();
+                        if (mProgressDialog != null) {
+                            mProgressDialog.cancel();
+                        }
+                        if (mListener != null) {
+                            mListener.cutFinish(targetPath, (long) duration);
+                        }
+                        boolean isPreview = true;
+                        if (mListener != null) {
+                            isPreview = mListener.isPreview();
+                            if (!isPreview) {
+                                finish();
+                            }
+                        }
+                        if (isPreview) {
+                            VideoPreviewActivity.open(getBaseContext(), targetPath, "video_cut.mp4");
+                        }
+                    }
                 }
-            }
+            });
         }
 
         @Override
-        public void onProgress(int progress, long progressTime) {
-            //progressTime 可以在结合视频总时长去计算合适的进度值
-            setProgressDialog(progress, progressTime);
-        }
-
-        @Override
-        public void onCancel() {
-//            cancelProgressDialog("已取消");
-            Toast.makeText(getBaseContext(), "已取消", Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        public void onError(String message) {
-            final AppCompatActivity appCompatActivity = mWeakReference.get();
-            if (appCompatActivity != null) {
-                cancelProgressDialog("出错了 onError：" + message);
-            }
+        public void cancel() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getBaseContext(), "已取消", Toast.LENGTH_SHORT).show();
+                }
+            });
         }
     }
 

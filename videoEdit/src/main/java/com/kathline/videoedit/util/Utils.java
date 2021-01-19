@@ -7,10 +7,10 @@ import android.content.DialogInterface;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 
+import com.luoye.bzmedia.FFmpegCMDUtil;
+
 import java.io.File;
 import java.lang.reflect.Field;
-
-import io.microshow.rxffmpeg.RxFFmpegInvoke;
 
 /**
  * Created by Super on 2018/12/8.
@@ -91,7 +91,7 @@ public class Utils {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 //中断 ffmpeg
-                RxFFmpegInvoke.getInstance().exit();
+                FFmpegCMDUtil.cancelExecuteFFmpegCommand();
                 if(mProgressDialog.getProgress() < 100) {
                     deleteFile(targetPath);
                 }
