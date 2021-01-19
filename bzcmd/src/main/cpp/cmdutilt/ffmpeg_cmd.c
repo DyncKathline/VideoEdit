@@ -77,15 +77,16 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_executeFFmpegCommand(JNIEnv *env,
         jclass actionClass = (*env)->GetObjectClass(env, actionCallBack);
         jmethodID progressMID = (*env)->GetMethodID(env, actionClass, "progress", "(IJ)V");
         jmethodID failMID = (*env)->GetMethodID(env, actionClass, "fail", "(ILjava/lang/String;)V");
+        jmethodID startMID = (*env)->GetMethodID(env, actionClass, "start", "()V");
         jmethodID successMID = (*env)->GetMethodID(env, actionClass, "success", "()V");
         jmethodID cancelMID = (*env)->GetMethodID(env, actionClass, "cancel", "()V");
-
 
         CallBackInfo onActionListener;
         onActionListener.env = env;
         onActionListener.obj = actionCallBack;
         onActionListener.methodID = progressMID;
 
+        (*env)->CallVoidMethod(env, actionCallBack, startMID);
         ret = exe_ffmpeg_cmd(cmdNum, argv, (int64_t) (&onActionListener), progressCallBack);
 //        av_log(NULL, AV_LOG_ERROR, "exe_ffmpeg_cmd ret=%d\n", ret);
         LOGD("exe_ffmpeg_cmd ret=%d\n", ret);

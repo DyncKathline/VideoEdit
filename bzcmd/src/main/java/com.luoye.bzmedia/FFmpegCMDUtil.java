@@ -24,18 +24,19 @@ public class FFmpegCMDUtil {
 
     public static native FMediaMetadata readAVInfo(String path);
 
-    public interface OnActionListener {
+    public abstract static class OnActionListener {
+        public void start() {}
         /**
          *
          * @param secs              处理进度，单位秒
          * @param progressTime      处理进度，单位纳秒
          */
-        void progress(int secs, long progressTime);
+        public abstract void progress(int secs, long progressTime);
 
-        void fail(int code, String message);
+        public void fail(int code, String message) {}
 
-        void success();
+        public abstract void success();
 
-        void cancel();
+        public void cancel() {}
     }
 }

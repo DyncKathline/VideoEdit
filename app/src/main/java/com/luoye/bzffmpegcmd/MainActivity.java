@@ -180,6 +180,11 @@ public class MainActivity extends AppCompatActivity {
                 String[] commands = cmdlist.build(true);
                 int ret = FFmpegCMDUtil.executeFFmpegCommand(commands, new FFmpegCMDUtil.OnActionListener() {
                     @Override
+                    public void start() {
+                        Log.d(TAG, "executeFFmpegCommand start");
+                    }
+
+                    @Override
                     public void progress(int secs, final long progress) {
                         //progressTime 可以在结合视频总时长去计算合适的进度值
                         Log.d(TAG, "executeFFmpegCommand secs= " + secs + ", progress=" + progress / 1000000f);
