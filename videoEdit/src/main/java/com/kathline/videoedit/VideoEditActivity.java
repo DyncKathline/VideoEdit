@@ -21,6 +21,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.kathline.videoedit.util.ProgressDialogUtil;
 import com.kathline.videoedit.util.Utils;
 import com.kathline.videoedit.util.VideoTrimmerUtil;
 import com.kathline.videoedit.view.CutView;
@@ -936,7 +937,9 @@ public class VideoEditActivity extends AppCompatActivity {
 //                cropWidth,cropHeight,textureVertexData);
     }
 
+    ProgressDialogUtil progressDialogUtil;
     public void startClipVideo(View view) {
+        progressDialogUtil = new ProgressDialogUtil(this);
         float startTime = Float.parseFloat(formatTime(mStartPos));
         float endTime = Float.parseFloat(formatTime(mEndPos));
         duration = endTime - startTime;
@@ -967,50 +970,7 @@ public class VideoEditActivity extends AppCompatActivity {
         }).start();
     }
 
-    private long startTime;//记录开始时间
-    private long endTime;//记录结束时间
     private float duration;//裁剪时长
-
-    private ProgressDialog mProgressDialog;
-
-    private void openProgressDialog() {
-        //统计开始时间
-        startTime = System.nanoTime();
-        mProgressDialog = Utils.openProgressDialog(this, targetPath);
-    }
-
-    /**
-     * 取消进度条
-     *
-     * @param dialogTitle Title
-     */
-    private void cancelProgressDialog(String dialogTitle) {
-        if (mProgressDialog != null) {
-            mProgressDialog.cancel();
-        }
-        if (!TextUtils.isEmpty(dialogTitle)) {
-            showDialog(dialogTitle);
-        }
-    }
-
-    /**
-     * 设置进度条
-     */
-    private void setProgressDialog(int progress, long progressTime) {
-        Log.i("RxTAG", "progress: " + progress + ", progressTime: " + progressTime + ", ---: " + (int) ((double) progressTime / 1000000 / 10 * 100f));
-        if (mProgressDialog != null) {
-            mProgressDialog.setProgress((int) ((double) progressTime / 1000000 / duration * 100f));
-            //progressTime 可以在结合视频总时长去计算合适的进度值
-            double time = (double) progressTime / 1000000;
-            mProgressDialog.setMessage("已处理" + String.format("%.2f", time) + "秒");
-        }
-    }
-
-    private void showDialog(String message) {
-        //统计结束时间
-        endTime = System.nanoTime();
-        Utils.showDialog(this, message, Utils.convertUsToTime((endTime - startTime) / 1000, false));
-    }
 
     // 这里设为静态内部类，防止内存泄露
     public class MyFFmpegSubscriber extends FFmpegCMDUtil.OnActionListener {
@@ -1026,7 +986,7 @@ public class VideoEditActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    openProgressDialog();
+                    progressDialogUtil.openProgressDialog(targetPath);
                 }
             });
         }
@@ -1037,7 +997,7 @@ public class VideoEditActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     //progressTime 可以在结合视频总时长去计算合适的进度值
-                    setProgressDialog(secs, progressTime);
+                    progressDialogUtil.setProgressDialog(secs, progressTime, duration);
                 }
             });
         }
@@ -1049,7 +1009,7 @@ public class VideoEditActivity extends AppCompatActivity {
                 public void run() {
                     final AppCompatActivity appCompatActivity = mWeakReference.get();
                     if (appCompatActivity != null) {
-                        cancelProgressDialog("出错了 onError：" + code + " " + message);
+                        progressDialogUtil.cancelProgressDialog("出错了 onError：" + code + " " + message);
                     }
                 }
             });
@@ -1066,12 +1026,7 @@ public class VideoEditActivity extends AppCompatActivity {
                     sendBroadcast(intent);
                     final AppCompatActivity appCompatActivity = mWeakReference.get();
                     if (appCompatActivity != null) {
-                        endTime = System.nanoTime();
-                        String takeUpTime = Utils.convertUsToTime((endTime - startTime) / 1000, false);
-                        Toast.makeText(getBaseContext(), "耗时：" + takeUpTime, Toast.LENGTH_SHORT).show();
-                        if (mProgressDialog != null) {
-                            mProgressDialog.cancel();
-                        }
+                        progressDialogUtil.onDismiss();
                         if (mListener != null) {
                             mListener.cutFinish(targetPath, (long) duration);
                         }
