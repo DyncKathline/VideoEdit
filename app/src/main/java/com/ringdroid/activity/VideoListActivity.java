@@ -171,7 +171,6 @@ public class VideoListActivity extends AppCompatActivity implements VideoAdapter
         String videoPath = video.getVideoPath();
         Intent intent = new Intent(this, VideoEditActivity.class);
         intent.putExtra(VideoEditActivity.VIDEO_PATH, videoPath);
-//        intent.putExtra(VideoEditActivity.MAX_SIZE, 30);
 //        intent.putExtra(VideoEditActivity.IS_SHOW_CUT_AREA, false);
         startActivity(intent);
     }

@@ -53,11 +53,10 @@ public class VideoPreviewActivity extends AppCompatActivity {
         mVideoView.release(true);
     }
 
-    public static void open(Context context, String videoPath, String saveName) {
+    public static void open(Context context, String videoPath) {
         Intent intent = new Intent(context, VideoPreviewActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.putExtra(VideoEditActivity.VIDEO_PATH, videoPath);
-        intent.putExtra(VideoEditActivity.SAVE_NAME, saveName);
         context.startActivity(intent);
     }
 }

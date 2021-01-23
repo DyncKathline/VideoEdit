@@ -9,7 +9,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.SystemClock;
-import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
@@ -44,13 +43,10 @@ public class VideoEditActivity extends AppCompatActivity {
 
     private final String TAG = "VideoEditActivity";
     public static final String VIDEO_PATH = "video_path";
-    public static final String SAVE_NAME = "save_name";
-    public static final String MAX_SIZE = "max_size";
-    public static final String IS_SHOW_CUT_AREA = "is_show_cut_area";
+    public static final String IS_SHOW_CUT_AREA = "is_show_cut_area";//是否开启裁剪区域功能
     private String targetPath;
     private String videoPath;
     private String compressPath;
-    private int maxSize;
     private boolean isShowCutArea;
     private WaveformView mWaveformView;
     private MarkerView mStartMarker;
@@ -87,6 +83,7 @@ public class VideoEditActivity extends AppCompatActivity {
 
     private TextureVideoView videoView;
     private CutView cutView;
+    private Button cut;
     private Button compress;
     private Button cutArea;
 
@@ -94,6 +91,8 @@ public class VideoEditActivity extends AppCompatActivity {
     private float mMaxCutTime = 15.0f;//裁剪最大时长，单位秒
     private int mMinCutTimePixels;
     private int mMaxCutTimePixels;
+
+    private boolean needCompress;//是否需要压缩
 
     private Runnable mPlayerHandler = new Runnable() {
         @Override
@@ -161,19 +160,13 @@ public class VideoEditActivity extends AppCompatActivity {
         mIsPlaying = false;
 
         videoPath = getIntent().getStringExtra(VideoEditActivity.VIDEO_PATH);
-        String saveName = getIntent().getStringExtra(VideoEditActivity.SAVE_NAME);
-        maxSize = getIntent().getIntExtra(VideoEditActivity.MAX_SIZE, 25);
         isShowCutArea = getIntent().getBooleanExtra(VideoEditActivity.IS_SHOW_CUT_AREA, true);
         String filePath = Environment.getExternalStorageDirectory().getPath() + File.separator + Environment.DIRECTORY_DCIM + File.separator + "Camera" + File.separator;
         File parentFile = new File(filePath);
         if(!parentFile.exists()) {
             parentFile.mkdirs();
         }
-        if(!TextUtils.isEmpty(saveName)) {
-            targetPath = filePath + File.separator + saveName;
-        }else {
-            targetPath = filePath + File.separator + "VIDEO_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + ".mp4";
-        }
+        targetPath = filePath + File.separator + "VIDEO_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + ".mp4";
         mKeyDown = false;
 
         mHandler = new Handler();
@@ -184,6 +177,7 @@ public class VideoEditActivity extends AppCompatActivity {
     private void loadGui() {
         videoView = findViewById(R.id.video_view);
         cutView = findViewById(R.id.cut_view);
+        cut = findViewById(R.id.cut);
         compress = findViewById(R.id.compress);
         cutArea = findViewById(R.id.cut_area);
 
@@ -469,10 +463,10 @@ public class VideoEditActivity extends AppCompatActivity {
                 notifyOnPrepared();
 
                 FMediaMetadata fMediaMetadata = FFmpegCMDUtil.readAVInfo(videoPath);
-                if(fMediaMetadata.getFileSize() < 1048576 * maxSize) {//单位MB
-                    compress.setVisibility(View.GONE);
-                }else {
+                if (fMediaMetadata.getVideoWidth() > 1920 || fMediaMetadata.getVideoHeight() > 1080) {
                     compress.setVisibility(View.VISIBLE);
+                }else {
+                    compress.setVisibility(View.GONE);
                 }
             }
         });
@@ -1038,6 +1032,13 @@ public class VideoEditActivity extends AppCompatActivity {
     private float duration;//裁剪时长
     public void startClipVideo(View view) {
         progressDialogUtil = new ProgressDialogUtil(this);
+        final FMediaMetadata fMediaMetadata = FFmpegCMDUtil.readAVInfo(videoPath);
+        if (fMediaMetadata.getVideoWidth() > 1920 || fMediaMetadata.getVideoHeight() > 1080) {//大于1920x1080直接裁剪会崩溃
+            needCompress = true;
+            compress.performClick();
+            return;
+        }
+
         float startTime = Float.parseFloat(formatTime(mStartPos));
         float endTime = Float.parseFloat(formatTime(mEndPos));
         duration = endTime - startTime;
@@ -1089,7 +1090,7 @@ public class VideoEditActivity extends AppCompatActivity {
         cmdlist.append("-b");
         cmdlist.append("3000k");
         cmdlist.append("-vf");
-        if (fMediaMetadata.getVideoWidth() > 1920) {
+        if (fMediaMetadata.getVideoWidth() > 1920 || fMediaMetadata.getVideoHeight() > 1080) {
             int rotate = fMediaMetadata.getRotate();
             if(rotate == 0 || rotate == 180) {
                 cmdlist.append("scale=-1:720");
@@ -1152,6 +1153,22 @@ public class VideoEditActivity extends AppCompatActivity {
                                 videoView.stopPlayback();
                                 videoPath = compressPath;
                                 videoView.setVideoPath(videoPath);
+                                progressDialogUtil.onDismiss();
+                                if(needCompress) {
+                                    needCompress = false;
+                                    cut.performClick();
+                                }else {
+                                    if (mListener != null) {
+                                        mListener.cutFinish(compressPath, fMediaMetadata.getDuration());
+                                    }
+                                    boolean isPreview = true;
+                                    if (mListener != null) {
+                                        isPreview = mListener.isPreview();
+                                        if (!isPreview) {
+                                            finish();
+                                        }
+                                    }
+                                }
                             }
                         });
                     }
@@ -1236,7 +1253,7 @@ public class VideoEditActivity extends AppCompatActivity {
                             }
                         }
                         if (isPreview) {
-                            VideoPreviewActivity.open(getBaseContext(), targetPath, "video_cut.mp4");
+                            VideoPreviewActivity.open(getBaseContext(), targetPath);
                         }
                     }
                 }
