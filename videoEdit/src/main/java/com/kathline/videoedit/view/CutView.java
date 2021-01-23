@@ -49,10 +49,12 @@ public class CutView extends View {
         super(context, attrs, defStyleAttr);
         init();
     }
+
     public CutView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
     }
+
     public CutView(Context context) {
         super(context);
         init();
@@ -70,7 +72,6 @@ public class CutView extends View {
     }
 
 
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
@@ -79,17 +80,17 @@ public class CutView extends View {
 
                 downX = event.getX();
                 downY = event.getY();
-                if(downX >= rectLeft && downX <= rectRight && downY >= rectTop && downY <= rectBottom){
+                if (downX >= rectLeft && downX <= rectRight && downY >= rectTop && downY <= rectBottom) {
                     //判断手指的范围在左面还是右面
-                    int w = (int) ((rectRight - rectLeft)/3);
-                    if (downX >= rectLeft && downX <= rectLeft+w) {
+                    int w = (int) ((rectRight - rectLeft) / 3);
+                    if (downX >= rectLeft && downX <= rectLeft + w) {
                         isLeft = true;
                     } else if (downX <= rectRight && downX >= rectRight - w) {
                         isRight = true;
                     }
                     //判断手指的范围在上面还是下面
-                    int h = (int) ((rectBottom - rectTop)/3);
-                    if (downY >= rectTop && downY <= rectTop+h) {
+                    int h = (int) ((rectBottom - rectTop) / 3);
+                    if (downY >= rectTop && downY <= rectTop + h) {
                         isTop = true;
                     } else if (downY <= rectBottom && downY >= rectBottom - h) {
                         isBottom = true;
@@ -118,7 +119,7 @@ public class CutView extends View {
                         rectRight -= slideX;
                     }
                     //同时改变top和bottom值, 达到上下移动的效果
-                    if (rectTop < 0 || rectBottom > measuredHeight ) {//判断y轴的移动边界
+                    if (rectTop < 0 || rectBottom > measuredHeight) {//判断y轴的移动边界
                         rectTop -= slideY;
                         rectBottom -= slideY;
                     }
@@ -127,83 +128,83 @@ public class CutView extends View {
                     downX = moveX;
                     downY = moveY;
                 } else {
-                    if(aspect != -1){
-                        if(isLeft && (isTop || isBottom)){
-                            if(!isSlideLeft && !isSlideTop && !isSlideBottom){
+                    if (aspect != -1) {
+                        if (isLeft && (isTop || isBottom)) {
+                            if (!isSlideLeft && !isSlideTop && !isSlideBottom) {
                                 float x = Math.abs(slideX);
                                 float y = Math.abs(slideY);
-                                if(x > y && x > 10){
+                                if (x > y && x > 10) {
                                     isSlideLeft = true;
-                                }else if(x < y && y >10){
-                                    if(isTop){
+                                } else if (x < y && y > 10) {
+                                    if (isTop) {
                                         isSlideTop = true;
-                                    }else{
+                                    } else {
                                         isSlideBottom = true;
                                     }
                                 }
                             }
-                        }else if (isRight && (isTop || isBottom)){
-                            if(!isSlideRight && !isSlideTop && !isSlideBottom){
+                        } else if (isRight && (isTop || isBottom)) {
+                            if (!isSlideRight && !isSlideTop && !isSlideBottom) {
                                 float x = Math.abs(slideX);
                                 float y = Math.abs(slideY);
-                                if(x > y && x > 10){
+                                if (x > y && x > 10) {
                                     isSlideRight = true;
-                                }else if(x < y && y >10){
-                                    if(isTop){
+                                } else if (x < y && y > 10) {
+                                    if (isTop) {
                                         isSlideTop = true;
-                                    }else{
+                                    } else {
                                         isSlideBottom = true;
                                     }
                                 }
                             }
-                        }else if(isLeft && !isSlideLeft){
+                        } else if (isLeft && !isSlideLeft) {
                             isSlideLeft = true;
-                        }else if(isRight && !isSlideLeft){
+                        } else if (isRight && !isSlideLeft) {
                             isSlideRight = true;
-                        }else if(isTop && !isSlideTop){
+                        } else if (isTop && !isSlideTop) {
                             isSlideTop = true;
-                        }else if(isBottom && !isSlideBottom){
+                        } else if (isBottom && !isSlideBottom) {
                             isSlideBottom = true;
                         }
                         if (isSlideLeft) {
                             rectLeft += slideX;
                             if (rectLeft < 0) rectLeft = 0;
                             float w = rectRight - rectLeft;
-                            if(w < cornerLength * 2){
+                            if (w < cornerLength * 2) {
                                 w = cornerLength * 2;
                                 rectLeft = rectRight - w;
                             }
-                            float h = w/aspect;
-                            if(h < cornerLength * 2){
+                            float h = w / aspect;
+                            if (h < cornerLength * 2) {
                                 h = cornerLength * 2;
-                                w = h *aspect;
+                                w = h * aspect;
                                 rectLeft = rectRight - w;
                             }
-                            if(isTop){
+                            if (isTop) {
                                 rectBottom = rectTop + h;
-                            }else if(isBottom){
+                            } else if (isBottom) {
                                 rectTop = rectBottom - h;
-                            }else{
+                            } else {
                                 float rh = rectBottom - rectTop;
-                                float t = (rh - h)/2;
+                                float t = (rh - h) / 2;
                                 rectTop += t;
                                 rectBottom -= t;
                             }
-                            if(rectTop < 0){
+                            if (rectTop < 0) {
                                 rectTop = 0;
                                 rectBottom = h;
-                                if(rectBottom > measuredHeight){
-                                    rectBottom =  measuredHeight;
+                                if (rectBottom > measuredHeight) {
+                                    rectBottom = measuredHeight;
                                 }
-                                w = rectBottom *aspect;
+                                w = rectBottom * aspect;
                                 rectLeft = rectRight - w;
-                            }else if(rectBottom > measuredHeight){
+                            } else if (rectBottom > measuredHeight) {
                                 rectBottom = measuredHeight;
                                 rectTop = measuredHeight - h;
-                                if(rectTop < 0){
+                                if (rectTop < 0) {
                                     rectTop = 0;
                                 }
-                                w = (rectBottom - rectTop) *aspect;
+                                w = (rectBottom - rectTop) * aspect;
                                 rectLeft = rectRight - w;
                             }
                             invalidate();
@@ -211,91 +212,91 @@ public class CutView extends View {
                             downY = moveY;
                         } else if (isSlideRight) {
                             rectRight += slideX;
-                            if (rectRight > measuredWidth )
+                            if (rectRight > measuredWidth)
                                 rectRight = measuredWidth;
                             float w = rectRight - rectLeft;
-                            if(w < cornerLength * 2){
+                            if (w < cornerLength * 2) {
                                 w = cornerLength * 2;
                                 rectRight = rectLeft + w;
                             }
-                            float h = w/aspect;
-                            if(h < cornerLength * 2){
+                            float h = w / aspect;
+                            if (h < cornerLength * 2) {
                                 h = cornerLength * 2;
-                                w = h *aspect;
+                                w = h * aspect;
                                 rectRight = rectLeft + w;
                             }
 
-                            if(isTop){
+                            if (isTop) {
                                 rectBottom = rectTop + h;
-                            }else if(isBottom){
+                            } else if (isBottom) {
                                 rectTop = rectBottom - h;
-                            }else{
+                            } else {
                                 float rh = rectBottom - rectTop;
-                                float t = (rh - h)/2;
+                                float t = (rh - h) / 2;
                                 rectTop += t;
                                 rectBottom -= t;
                             }
-                            if(rectTop < 0){
+                            if (rectTop < 0) {
                                 rectTop = 0;
                                 rectBottom = h;
-                                if(rectBottom > measuredHeight){
-                                    rectBottom =  measuredHeight;
+                                if (rectBottom > measuredHeight) {
+                                    rectBottom = measuredHeight;
                                 }
-                                w = rectBottom *aspect;
+                                w = rectBottom * aspect;
                                 rectRight = rectLeft + w;
-                            }else if(rectBottom > measuredHeight){
+                            } else if (rectBottom > measuredHeight) {
                                 rectBottom = measuredHeight;
                                 rectTop = measuredHeight - h;
-                                if(rectTop < 0){
+                                if (rectTop < 0) {
                                     rectTop = 0;
                                 }
-                                w = (rectBottom - rectTop) *aspect;
+                                w = (rectBottom - rectTop) * aspect;
                                 rectRight = rectLeft + w;
                             }
                             invalidate();
                             downX = moveX;
                             downY = moveY;
-                        }else if (isSlideTop) {
+                        } else if (isSlideTop) {
                             rectTop += slideY;
                             if (rectTop < 0) rectTop = 0;
                             float h = rectBottom - rectTop;
-                            if(h < cornerLength * 2){
+                            if (h < cornerLength * 2) {
                                 h = cornerLength * 2;
                                 rectTop = rectBottom - h;
                             }
-                            float w = h*aspect;
-                            if(w < cornerLength * 2){
+                            float w = h * aspect;
+                            if (w < cornerLength * 2) {
                                 w = cornerLength * 2;
-                                h = w /aspect;
+                                h = w / aspect;
                                 rectTop = rectBottom - h;
                             }
 
-                            if(isLeft){
+                            if (isLeft) {
                                 rectRight = rectLeft + w;
-                            }else if(isRight){
+                            } else if (isRight) {
                                 rectLeft = rectRight - w;
-                            }else{
+                            } else {
                                 float rw = rectRight - rectLeft;
-                                float t = (rw - w)/2;
+                                float t = (rw - w) / 2;
                                 rectLeft += t;
                                 rectRight -= t;
                             }
-                            if(rectLeft < 0){
+                            if (rectLeft < 0) {
                                 rectLeft = 0;
                                 rectRight = w;
-                                if(rectRight > measuredWidth){
+                                if (rectRight > measuredWidth) {
                                     rectRight = measuredWidth;
                                 }
-                                h = rectRight /aspect;
+                                h = rectRight / aspect;
                                 rectTop = rectBottom - h;
-                            }else if(rectRight > measuredWidth){
+                            } else if (rectRight > measuredWidth) {
                                 rectRight = measuredWidth;
                                 rectLeft = measuredWidth - w;
-                                if(rectLeft < 0){
+                                if (rectLeft < 0) {
                                     rectLeft = 0;
                                     w = measuredWidth;
                                 }
-                                h = w /aspect;
+                                h = w / aspect;
                                 rectTop = rectBottom - h;
                             }
                             invalidate();
@@ -303,53 +304,53 @@ public class CutView extends View {
                             downY = moveY;
                         } else if (isSlideBottom) {
                             rectBottom += slideY;
-                            if (rectBottom > measuredHeight )
-                                rectBottom = measuredHeight ;
+                            if (rectBottom > measuredHeight)
+                                rectBottom = measuredHeight;
                             float h = rectBottom - rectTop;
-                            if(h < cornerLength * 2){
+                            if (h < cornerLength * 2) {
                                 h = cornerLength * 2;
                                 rectBottom = rectTop + h;
                             }
-                            float w = h*aspect;
-                            if(w < cornerLength * 2){
+                            float w = h * aspect;
+                            if (w < cornerLength * 2) {
                                 w = cornerLength * 2;
-                                h = w /aspect;
+                                h = w / aspect;
                                 rectBottom = rectTop + h;
                             }
 
-                            if(isLeft){
+                            if (isLeft) {
                                 rectRight = rectLeft + w;
-                            }else if(isRight){
+                            } else if (isRight) {
                                 rectLeft = rectRight - w;
-                            }else{
+                            } else {
                                 float rw = rectRight - rectLeft;
-                                float t = (rw - w)/2;
+                                float t = (rw - w) / 2;
                                 rectLeft += t;
                                 rectRight -= t;
                             }
-                            if(rectLeft < 0){
+                            if (rectLeft < 0) {
                                 rectLeft = 0;
                                 rectRight = w;
-                                if(rectRight > measuredWidth){
+                                if (rectRight > measuredWidth) {
                                     rectRight = measuredWidth;
                                 }
-                                h = rectRight /aspect;
+                                h = rectRight / aspect;
                                 rectBottom = rectTop + h;
-                            }else if(rectRight > measuredWidth){
+                            } else if (rectRight > measuredWidth) {
                                 rectRight = measuredWidth;
                                 rectLeft = measuredWidth - w;
-                                if(rectLeft < 0){
+                                if (rectLeft < 0) {
                                     rectLeft = 0;
                                     w = measuredWidth;
                                 }
-                                h = w /aspect;
+                                h = w / aspect;
                                 rectBottom = rectTop + h;
                             }
                             invalidate();
                             downX = moveX;
                             downY = moveY;
                         }
-                    }else{
+                    } else {
                         if (isLeft) {
                             rectLeft += slideX;
                             if (rectLeft < 0) rectLeft = 0;
@@ -357,7 +358,7 @@ public class CutView extends View {
                                 rectLeft = rectRight - cornerLength * 2;
                         } else if (isRight) {
                             rectRight += slideX;
-                            if (rectRight > measuredWidth )
+                            if (rectRight > measuredWidth)
                                 rectRight = measuredWidth;
                             if (rectRight < rectLeft + cornerLength * 2)
                                 rectRight = rectLeft + cornerLength * 2;
@@ -370,8 +371,8 @@ public class CutView extends View {
                                 rectTop = rectBottom - cornerLength * 2;
                         } else if (isBottom) {
                             rectBottom += slideY;
-                            if (rectBottom > measuredHeight )
-                                rectBottom = measuredHeight ;
+                            if (rectBottom > measuredHeight)
+                                rectBottom = measuredHeight;
                             if (rectBottom < rectTop + cornerLength * 2)
                                 rectBottom = rectTop + cornerLength * 2;
                         }
@@ -403,10 +404,10 @@ public class CutView extends View {
     public float[] getCutArr() {
 
         float[] arr = new float[4];
-        arr[0] = rectLeft ;
-        arr[1] = rectTop ;
-        arr[2] = rectRight ;
-        arr[3] = rectBottom ;
+        arr[0] = rectLeft;
+        arr[1] = rectTop;
+        arr[2] = rectRight;
+        arr[3] = rectBottom;
         return arr;
     }
 
@@ -417,46 +418,44 @@ public class CutView extends View {
     public int getRectHeight() {
         return (int) (measuredHeight);
     }
-    public void setAspect(float aspect){
+
+    public void setAspect(float aspect) {
         this.aspect = aspect;
     }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-
-        if (measuredWidth == 0) {
-            initParams();
-        }
+        initParams();
     }
 
     private void initParams() {
-
         measuredWidth = getMeasuredWidth();
         measuredHeight = getMeasuredHeight();
-        if(aspect == -1){
+        if (aspect == -1) {
             cornerLength = measuredWidth / 6;
-            rectRight = measuredWidth ;
+            rectRight = measuredWidth;
             rectLeft = 0;
             rectTop = 0;
-            rectBottom = measuredHeight ;
-        }else{
-            float vh = measuredWidth*1.0f/measuredHeight;
-            if(aspect > 1){
+            rectBottom = measuredHeight;
+        } else {
+            float vh = measuredWidth * 1.0f / measuredHeight;
+            if (aspect > 1) {
                 cornerLength = measuredWidth / 6;
-            }else{
+            } else {
                 cornerLength = measuredHeight / 6;
             }
-            if(aspect > vh){
+            if (aspect > vh) {
                 rectLeft = 0;
                 rectRight = measuredWidth;
-                float h = measuredWidth/aspect;
-                rectTop = (measuredHeight - h)/2;
+                float h = measuredWidth / aspect;
+                rectTop = (measuredHeight - h) / 2;
                 rectBottom = rectTop + h;
-            }else{
+            } else {
                 rectTop = 0;
                 rectBottom = measuredHeight;
-                float w = measuredHeight*aspect;
-                rectLeft = (measuredWidth - w)/2;
+                float w = measuredHeight * aspect;
+                rectLeft = (measuredWidth - w) / 2;
                 rectRight = rectLeft + w;
             }
         }
@@ -464,7 +463,6 @@ public class CutView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-
         paint.setStrokeWidth(dp1);
         //绘制裁剪区域的矩形, 传入margin值来确定大小
         canvas.drawRect(rectLeft, rectTop, rectRight, rectBottom, paint);

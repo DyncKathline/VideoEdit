@@ -54,6 +54,7 @@ public class TextureVideoView extends TextureView implements MediaController.Med
     private MediaController mMediaController;
     private MediaPlayer.OnCompletionListener mOnCompletionListener;
     private MediaPlayer.OnPreparedListener mOnPreparedListener;
+    private MediaPlayer.OnVideoSizeChangedListener mOnVideoSizeChangedListener;
     private int mCurrentBufferPercentage;
     private MediaPlayer.OnErrorListener mOnErrorListener;
     private MediaPlayer.OnInfoListener mOnInfoListener;
@@ -143,6 +144,10 @@ public class TextureVideoView extends TextureView implements MediaController.Med
             }
         } else {
             // no size yet, just adopt the given spec sizes
+        }
+//        Log.i("@@@@", "onMeasure width=" + width + "height=" + height);
+        if(mOnVideoSizeChangedListener != null) {
+            mOnVideoSizeChangedListener.onVideoSizeChanged(mMediaPlayer, width, height);
         }
         setMeasuredDimension(width, height);
     }
@@ -443,6 +448,14 @@ public class TextureVideoView extends TextureView implements MediaController.Med
      */
     public void setOnInfoListener(MediaPlayer.OnInfoListener l) {
         mOnInfoListener = l;
+    }
+
+    /**
+     *
+     * @param l The callback that will be run
+     */
+    public void setOnVideoSizeChangedListener(MediaPlayer.OnVideoSizeChangedListener l) {
+        mOnVideoSizeChangedListener = l;
     }
 
     /*

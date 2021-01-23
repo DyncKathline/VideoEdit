@@ -1,3 +1,2 @@
-include ':bzcmd'
 include ':videoEdit'
 include ':app'
