@@ -1153,7 +1153,6 @@ public class VideoEditActivity extends AppCompatActivity {
                                 videoView.stopPlayback();
                                 videoPath = compressPath;
                                 videoView.setVideoPath(videoPath);
-                                progressDialogUtil.onDismiss();
                                 if(needCompress) {
                                     needCompress = false;
                                     cut.performClick();
