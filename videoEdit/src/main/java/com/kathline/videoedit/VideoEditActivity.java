@@ -44,6 +44,8 @@ public class VideoEditActivity extends AppCompatActivity {
     private final String TAG = "VideoEditActivity";
     public static final String VIDEO_PATH = "video_path";
     public static final String IS_SHOW_CUT_AREA = "is_show_cut_area";//是否开启裁剪区域功能
+    public static final String MIN_CUT_TIME = "min_cut_time";//设置最小裁剪时长
+    public static final String MAX_CUT_TIME = "max_cut_time";//设置最大裁剪时长
     private String targetPath;
     private String videoPath;
     private String compressPath;
@@ -161,6 +163,8 @@ public class VideoEditActivity extends AppCompatActivity {
 
         videoPath = getIntent().getStringExtra(VideoEditActivity.VIDEO_PATH);
         isShowCutArea = getIntent().getBooleanExtra(VideoEditActivity.IS_SHOW_CUT_AREA, true);
+        mMinCutTime = getIntent().getFloatExtra(VideoEditActivity.MIN_CUT_TIME, 3.0f);
+        mMaxCutTime = getIntent().getFloatExtra(VideoEditActivity.MAX_CUT_TIME, 15.0f);
         String filePath = Environment.getExternalStorageDirectory().getPath() + File.separator + Environment.DIRECTORY_DCIM + File.separator + "Camera" + File.separator;
         File parentFile = new File(filePath);
         if(!parentFile.exists()) {
