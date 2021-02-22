@@ -86,7 +86,8 @@ public class MainActivity extends AppCompatActivity {
                 cmdlist.append("-t");
                 cmdlist.append(10 + "");
                 cmdlist.append("-i");
-                cmdlist.append("/storage/emulated/0/qqmusic/mv/贝瓦儿歌 - 拔萝卜.mp4");
+//                cmdlist.append("/storage/emulated/0/qqmusic/mv/贝瓦儿歌 - 拔萝卜.mp4");
+                cmdlist.append("/storage/emulated/0/DCIM/Camera/VID_20201216_215945.mp4");
                 cmdlist.append("-c:v");
                 cmdlist.append("libx264");
                 cmdlist.append("-c:a");
@@ -149,12 +150,12 @@ public class MainActivity extends AppCompatActivity {
 
                 //[ffmpeg, -y, -c:v, h264_mediacodec, -i, /storage/emulated/0/DCIM/Camera/VID_20201207_223556.mp4, -preset, superfast, -b:v, 4000k, -s, 1920x1080, -r, 30, /storage/emulated/0/Movies/2020-12-23-17-03-59.mp4]
 
-                FMediaMetadata fMediaMetadata = FFmpegCMDUtil.readAVInfo("/storage/emulated/0/DCIM/Camera/VID_20201207_223556.mp4");
+                FMediaMetadata fMediaMetadata = FFmpegCMDUtil.readAVInfo("/storage/emulated/0/DCIM/ScreenRecorder/asd.mp4");
 
                 FFmpegCommandList cmdlist = new FFmpegCommandList();
                 cmdlist.append("-i");
 //                cmdlist.append("/storage/emulated/0/qqmusic/mv/贝瓦儿歌 - 拔萝卜.mp4");
-                cmdlist.append("/storage/emulated/0/DCIM/Camera/VID_20201207_223556.mp4");
+                cmdlist.append("/storage/emulated/0/DCIM/ScreenRecorder/asd.mp4");
                 cmdlist.append("-c:v");
                 cmdlist.append("libx264");
                 cmdlist.append("-preset");
@@ -163,17 +164,15 @@ public class MainActivity extends AppCompatActivity {
                 cmdlist.append("25");
                 cmdlist.append("-b:v");
                 cmdlist.append("4000k");
-                cmdlist.append("-s");
-                int width = fMediaMetadata.getVideoWidth();
-                int height = fMediaMetadata.getVideoHeight();
-                if (fMediaMetadata.getVideoWidth() > 1920) {
-                    width = width / 2;
-                    height = height / 2;
+                cmdlist.append("-filter:v");
+                if (fMediaMetadata.getVideoWidth() > 1920 || fMediaMetadata.getVideoHeight() > 1080) {
+                    int rotate = fMediaMetadata.getRotate();
+                    if(rotate == 0 || rotate == 180) {
+                        cmdlist.append("scale=720:-1");
+                    }else if(rotate == 90 || rotate == 270) {
+                        cmdlist.append("scale=-1:720");
+                    }
                 }
-                cmdlist.append("" + width);
-                cmdlist.append("x");
-                cmdlist.append("" + height);
-//                cmdlist.append("1920x1080");
                 cmdlist.append("-r");
                 cmdlist.append("30");
                 cmdlist.append("/storage/emulated/0/avEditor/out2.mp4");

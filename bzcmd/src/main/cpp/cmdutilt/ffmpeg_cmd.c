@@ -29,6 +29,15 @@ void log_call_back(void *ptr, int level, const char *fmt, va_list vl) {
     } else {
         if (level <= 16) {//ffmpeg 来的日志
             __android_log_vprint(ANDROID_LOG_ERROR, TAG, fmt, vl);
+            va_list vl2;
+            char *line = malloc(128 * sizeof(char));
+            static int print_prefix = 1;
+            va_copy(vl2, vl);
+            av_log_format_line(ptr, level, fmt, vl2, line, 128, &print_prefix);
+            va_end(vl2);
+            line[127] = '\\0';
+            LOGE("%s", line);
+            free(line);
         } else {
 //            __android_log_vprint(ANDROID_LOG_VERBOSE, TAG, fmt, vl);
         }
