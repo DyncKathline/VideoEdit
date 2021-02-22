@@ -160,17 +160,27 @@ public class MainActivity extends AppCompatActivity {
                 cmdlist.append("libx264");
                 cmdlist.append("-preset");
                 cmdlist.append("superfast");
-                cmdlist.append("-crf");
-                cmdlist.append("25");
+//                cmdlist.append("-crf");
+//                cmdlist.append("25");
                 cmdlist.append("-b:v");
-                cmdlist.append("4000k");
+                cmdlist.append("3000k");
                 cmdlist.append("-filter:v");
-                if (fMediaMetadata.getVideoWidth() > 1920 || fMediaMetadata.getVideoHeight() > 1080) {
+                int videoWidth = fMediaMetadata.getVideoWidth();
+                int videoHeight = fMediaMetadata.getVideoHeight();
+                if (videoWidth > 1920 || videoHeight > 1080) {
                     int rotate = fMediaMetadata.getRotate();
-                    if(rotate == 0 || rotate == 180) {
-                        cmdlist.append("scale=720:-1");
-                    }else if(rotate == 90 || rotate == 270) {
-                        cmdlist.append("scale=-1:720");
+                    if(videoWidth > videoHeight) {
+                        if(rotate == 0 || rotate == 180) {
+                            cmdlist.append("scale=-1:720");//竖屏
+                        }else if(rotate == 90 || rotate == 270) {
+                            cmdlist.append("scale=720:-1");//横屏
+                        }
+                    }else {
+                        if(rotate == 0 || rotate == 180) {
+                            cmdlist.append("scale=720:-1");//横屏
+                        }else if(rotate == 90 || rotate == 270) {
+                            cmdlist.append("scale=-1:720");//竖屏
+                        }
                     }
                 }
                 cmdlist.append("-r");
