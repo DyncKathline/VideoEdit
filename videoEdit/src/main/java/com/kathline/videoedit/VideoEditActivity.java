@@ -46,6 +46,7 @@ public class VideoEditActivity extends AppCompatActivity {
     public static final String IS_SHOW_CUT_AREA = "is_show_cut_area";//是否开启裁剪区域功能
     public static final String MIN_CUT_TIME = "min_cut_time";//设置最小裁剪时长
     public static final String MAX_CUT_TIME = "max_cut_time";//设置最大裁剪时长
+    public static final String MAX_RESOLUTION = "max_resolution";//设置最大分辨率，超过就需要进行压缩，取宽高中的最小值
     private String targetPath;
     private String videoPath;
     private String compressPath;
@@ -91,6 +92,7 @@ public class VideoEditActivity extends AppCompatActivity {
 
     private float mMinCutTime = 3.0f;//裁剪最小时长，单位秒
     private float mMaxCutTime = 15.0f;//裁剪最大时长，单位秒
+    private int mMaxResolution = 720;
     private int mMinCutTimePixels;
     private int mMaxCutTimePixels;
 
@@ -165,6 +167,7 @@ public class VideoEditActivity extends AppCompatActivity {
         isShowCutArea = getIntent().getBooleanExtra(VideoEditActivity.IS_SHOW_CUT_AREA, true);
         mMinCutTime = getIntent().getFloatExtra(VideoEditActivity.MIN_CUT_TIME, 3.0f);
         mMaxCutTime = getIntent().getFloatExtra(VideoEditActivity.MAX_CUT_TIME, 15.0f);
+        mMaxResolution = getIntent().getIntExtra(VideoEditActivity.MAX_RESOLUTION, 720);
         String filePath = Environment.getExternalStorageDirectory().getPath() + File.separator + Environment.DIRECTORY_DCIM + File.separator + "Camera" + File.separator;
         File parentFile = new File(filePath);
         if(!parentFile.exists()) {
@@ -467,7 +470,10 @@ public class VideoEditActivity extends AppCompatActivity {
                 notifyOnPrepared();
 
                 FMediaMetadata fMediaMetadata = FFmpegCMDUtil.readAVInfo(videoPath);
-                if (fMediaMetadata.getVideoWidth() > 1920 || fMediaMetadata.getVideoHeight() > 1080) {
+                int videoWidth = fMediaMetadata.getVideoWidth();
+                int videoHeight = fMediaMetadata.getVideoHeight();
+//                Log.e("kath---", "width = " + videoWidth + " height = " + videoHeight + " rotate = " + fMediaMetadata.getRotate());
+                if (Math.min(videoWidth, videoHeight) > mMaxResolution) {
                     compress.setVisibility(View.VISIBLE);
                 }else {
                     compress.setVisibility(View.GONE);
@@ -1037,7 +1043,10 @@ public class VideoEditActivity extends AppCompatActivity {
     public void startClipVideo(View view) {
         progressDialogUtil = new ProgressDialogUtil(this);
         final FMediaMetadata fMediaMetadata = FFmpegCMDUtil.readAVInfo(videoPath);
-        if (fMediaMetadata.getVideoWidth() > 1920 || fMediaMetadata.getVideoHeight() > 1080) {//大于1920x1080直接裁剪会崩溃
+        int videoWidth = fMediaMetadata.getVideoWidth();
+        int videoHeight = fMediaMetadata.getVideoHeight();
+//                Log.e("kath---", "width = " + videoWidth + " height = " + videoHeight + " rotate = " + fMediaMetadata.getRotate());
+        if (Math.min(videoWidth, videoHeight) > mMaxResolution) {//大于1920x1080直接裁剪会崩溃
             needCompress = true;
             compress.performClick();
             return;
@@ -1085,21 +1094,30 @@ public class VideoEditActivity extends AppCompatActivity {
 
         FFmpegCommandList cmdlist = new FFmpegCommandList();
         cmdlist.append("-i");
-//                cmdlist.append("/storage/emulated/0/qqmusic/mv/贝瓦儿歌 - 拔萝卜.mp4");
         cmdlist.append(videoPath);
-        cmdlist.append("-vcodec");
+        cmdlist.append("-c:v");
         cmdlist.append("libx264");
         cmdlist.append("-preset");
         cmdlist.append("superfast");
-        cmdlist.append("-b");
+        cmdlist.append("-b:v");
         cmdlist.append("3000k");
-        cmdlist.append("-vf");
-        if (fMediaMetadata.getVideoWidth() > 1920 || fMediaMetadata.getVideoHeight() > 1080) {
+        int videoWidth = fMediaMetadata.getVideoWidth();
+        int videoHeight = fMediaMetadata.getVideoHeight();
+        if (Math.min(videoWidth, videoHeight) > mMaxResolution) {
+            cmdlist.append("-filter:v");
             int rotate = fMediaMetadata.getRotate();
-            if(rotate == 0 || rotate == 180) {
-                cmdlist.append("scale=-1:720");
-            }else if(rotate == 90 || rotate == 270) {
-                cmdlist.append("scale=720:-1");
+            if(videoWidth > videoHeight) {
+                if(rotate == 0 || rotate == 180) {
+                    cmdlist.append("scale=-1:720");//竖屏
+                }else if(rotate == 90 || rotate == 270) {
+                    cmdlist.append("scale=720:-1");//横屏
+                }
+            }else {
+                if(rotate == 0 || rotate == 180) {
+                    cmdlist.append("scale=720:-1");//横屏
+                }else if(rotate == 90 || rotate == 270) {
+                    cmdlist.append("scale=-1:720");//竖屏
+                }
             }
         }
         cmdlist.append("-r");
@@ -1245,6 +1263,9 @@ public class VideoEditActivity extends AppCompatActivity {
                     final AppCompatActivity appCompatActivity = mWeakReference.get();
                     if (appCompatActivity != null) {
                         progressDialogUtil.onDismiss();
+                        videoView.stopPlayback();
+                        videoPath = targetPath;
+                        videoView.setVideoPath(videoPath);
                         if (mListener != null) {
                             mListener.cutFinish(targetPath, (long) duration);
                         }

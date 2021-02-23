@@ -172,6 +172,7 @@ public class VideoListActivity extends AppCompatActivity implements VideoAdapter
         Intent intent = new Intent(this, VideoEditActivity.class);
         intent.putExtra(VideoEditActivity.VIDEO_PATH, videoPath);
 //        intent.putExtra(VideoEditActivity.IS_SHOW_CUT_AREA, false);
+        intent.putExtra(VideoEditActivity.MAX_CUT_TIME, 90f);
         startActivity(intent);
     }
 
