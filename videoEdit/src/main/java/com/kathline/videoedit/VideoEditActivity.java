@@ -1,9 +1,9 @@
 package com.kathline.videoedit;
 
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.media.MediaPlayer;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -44,13 +44,15 @@ public class VideoEditActivity extends AppCompatActivity {
     private final String TAG = "VideoEditActivity";
     public static final String VIDEO_PATH = "video_path";
     public static final String IS_SHOW_CUT_AREA = "is_show_cut_area";//是否开启裁剪区域功能
+    public static final String IS_SHOW_COMPRESS_BTN = "is_show_compress_btn";//是否开启压缩按钮功能
     public static final String MIN_CUT_TIME = "min_cut_time";//设置最小裁剪时长
     public static final String MAX_CUT_TIME = "max_cut_time";//设置最大裁剪时长
     public static final String MAX_RESOLUTION = "max_resolution";//设置最大分辨率，超过就需要进行压缩，取宽高中的最小值
-    private String targetPath;
     private String videoPath;
+    private String targetPath;
     private String compressPath;
     private boolean isShowCutArea;
+    private boolean isShowCompressBtn;
     private WaveformView mWaveformView;
     private MarkerView mStartMarker;
     private MarkerView mEndMarker;
@@ -147,13 +149,6 @@ public class VideoEditActivity extends AppCompatActivity {
 
     public static Listener mListener;
 
-    public static void open(Context context, String videoPath, Listener listener) {
-        mListener = listener;
-        Intent intent = new Intent(context, VideoEditActivity.class);
-        intent.putExtra(VideoEditActivity.VIDEO_PATH, videoPath);
-        context.startActivity(intent);
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -165,6 +160,7 @@ public class VideoEditActivity extends AppCompatActivity {
 
         videoPath = getIntent().getStringExtra(VideoEditActivity.VIDEO_PATH);
         isShowCutArea = getIntent().getBooleanExtra(VideoEditActivity.IS_SHOW_CUT_AREA, true);
+        isShowCompressBtn = getIntent().getBooleanExtra(VideoEditActivity.IS_SHOW_COMPRESS_BTN, true);
         mMinCutTime = getIntent().getFloatExtra(VideoEditActivity.MIN_CUT_TIME, 3.0f);
         mMaxCutTime = getIntent().getFloatExtra(VideoEditActivity.MAX_CUT_TIME, 15.0f);
         mMaxResolution = getIntent().getIntExtra(VideoEditActivity.MAX_RESOLUTION, 720);
@@ -473,7 +469,7 @@ public class VideoEditActivity extends AppCompatActivity {
                 int videoWidth = fMediaMetadata.getVideoWidth();
                 int videoHeight = fMediaMetadata.getVideoHeight();
 //                Log.e("kath---", "width = " + videoWidth + " height = " + videoHeight + " rotate = " + fMediaMetadata.getRotate());
-                if (Math.min(videoWidth, videoHeight) > mMaxResolution) {
+                if (isShowCompressBtn && Math.min(videoWidth, videoHeight) > mMaxResolution) {
                     compress.setVisibility(View.VISIBLE);
                 }else {
                     compress.setVisibility(View.GONE);
@@ -921,6 +917,9 @@ public class VideoEditActivity extends AppCompatActivity {
         finish();
     }
 
+    ProgressDialogUtil progressDialogUtil;
+    private float duration;//裁剪时长
+
     public void startCutAreaVideo(View view) {
         long vst = (long) (Double.parseDouble(formatTime(mStartPos)) * 1000 * 1000);
         long vse = (long) (Double.parseDouble(formatTime(mEndPos)) * 1000 * 1000);
@@ -967,7 +966,7 @@ public class VideoEditActivity extends AppCompatActivity {
         cmdlist.append("-strict");
         cmdlist.append("experimental");
         cmdlist.append("-b");
-        cmdlist.append("500k");
+        cmdlist.append("1000k");
         cmdlist.append(cutPath);
         final String[] commands = cmdlist.build(true);
         new Thread(new Runnable() {
@@ -991,7 +990,7 @@ public class VideoEditActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 //progressTime 可以在结合视频总时长去计算合适的进度值
-                                progressDialogUtil.setProgressDialog(secs, progressTime, duration);
+                                progressDialogUtil.setProgressDialog("裁剪中：", secs, progressTime, duration);
                             }
                         });
                     }
@@ -1002,15 +1001,18 @@ public class VideoEditActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 progressDialogUtil.cancelProgressDialog("出错了 onError：" + code + " " + message);
+                                progressDialogUtil.deleteFile(cutPath);
                             }
                         });
                     }
 
                     @Override
-                    public void success() {//刷新媒体库
+                    public void success() {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+                                //刷新媒体库
+//                                MediaScannerConnection.scanFile(VideoEditActivity.this, new String[] { cutPath }, null, null);
                                 Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
                                 Uri uri = Uri.fromFile(new File(cutPath));
                                 intent.setData(uri);
@@ -1029,6 +1031,7 @@ public class VideoEditActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 Toast.makeText(getBaseContext(), "已取消", Toast.LENGTH_SHORT).show();
+                                progressDialogUtil.deleteFile(cutPath);
                             }
                         });
                     }
@@ -1037,9 +1040,6 @@ public class VideoEditActivity extends AppCompatActivity {
         }).start();
     }
 
-    ProgressDialogUtil progressDialogUtil;
-
-    private float duration;//裁剪时长
     public void startClipVideo(View view) {
         progressDialogUtil = new ProgressDialogUtil(this);
         final FMediaMetadata fMediaMetadata = FFmpegCMDUtil.readAVInfo(videoPath);
@@ -1069,7 +1069,7 @@ public class VideoEditActivity extends AppCompatActivity {
         cmdlist.append("-strict");
         cmdlist.append("experimental");
         cmdlist.append("-b");
-        cmdlist.append("500k");
+        cmdlist.append("1000k");
         cmdlist.append(targetPath);
         final String[] commands = cmdlist.build(true);
 
@@ -1077,7 +1077,83 @@ public class VideoEditActivity extends AppCompatActivity {
             @Override
             public void run() {
                 //开始执行FFmpeg命令
-                FFmpegCMDUtil.executeFFmpegCommand(commands, new MyFFmpegSubscriber(VideoEditActivity.this));
+                FFmpegCMDUtil.executeFFmpegCommand(commands, new FFmpegCMDUtil.OnActionListener() {
+
+                    @Override
+                    public void start() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                progressDialogUtil.openProgressDialog(targetPath);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void progress(final int secs, final long progressTime) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                //progressTime 可以在结合视频总时长去计算合适的进度值
+                                progressDialogUtil.setProgressDialog("裁剪中：", secs, progressTime, duration);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void fail(final int code, final String message) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                progressDialogUtil.cancelProgressDialog("出错了 onError：" + code + " " + message);
+                                progressDialogUtil.deleteFile(targetPath);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void success() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                //刷新媒体库
+//                              MediaScannerConnection.scanFile(VideoEditActivity.this, new String[] { targetPath }, null, null);
+                                Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                                Uri uri = Uri.fromFile(new File(targetPath));
+                                intent.setData(uri);
+                                sendBroadcast(intent);
+                                progressDialogUtil.onDismiss();
+                                videoView.stopPlayback();
+                                videoPath = targetPath;
+                                videoView.setVideoPath(videoPath);
+                                if (mListener != null) {
+                                    mListener.cutFinish(targetPath, (long) duration);
+                                }
+                                boolean isPreview = true;
+                                if (mListener != null) {
+                                    isPreview = mListener.isPreview();
+                                    if (!isPreview) {
+                                        finish();
+                                    }
+                                }
+                                if (isPreview) {
+                                    VideoPreviewActivity.open(getBaseContext(), targetPath);
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void cancel() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(getBaseContext(), "已取消", Toast.LENGTH_SHORT).show();
+                                progressDialogUtil.deleteFile(targetPath);
+                            }
+                        });
+                    }
+                });
             }
         }).start();
     }
@@ -1100,7 +1176,7 @@ public class VideoEditActivity extends AppCompatActivity {
         cmdlist.append("-preset");
         cmdlist.append("superfast");
         cmdlist.append("-b:v");
-        cmdlist.append("3000k");
+        cmdlist.append("1000k");
         int videoWidth = fMediaMetadata.getVideoWidth();
         int videoHeight = fMediaMetadata.getVideoHeight();
         if (Math.min(videoWidth, videoHeight) > mMaxResolution) {
@@ -1136,7 +1212,7 @@ public class VideoEditActivity extends AppCompatActivity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                progressDialogUtil.openProgressDialog(targetPath);
+                                progressDialogUtil.openProgressDialog(compressPath);
                             }
                         });
                     }
@@ -1147,7 +1223,7 @@ public class VideoEditActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 //progressTime 可以在结合视频总时长去计算合适的进度值
-                                progressDialogUtil.setProgressDialog(secs, progressTime, fMediaMetadata.getDuration() / 1000f);
+                                progressDialogUtil.setProgressDialog("压缩中：", secs, progressTime, fMediaMetadata.getDuration() / 1000f);
                             }
                         });
                     }
@@ -1158,17 +1234,20 @@ public class VideoEditActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 progressDialogUtil.cancelProgressDialog("出错了 onError：" + code + " " + message);
+                                progressDialogUtil.deleteFile(compressPath);
                             }
                         });
                     }
 
                     @Override
-                    public void success() {//刷新媒体库
+                    public void success() {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+                                //刷新媒体库
+//                                MediaScannerConnection.scanFile(VideoEditActivity.this, new String[] { compressPath }, null, null);
                                 Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-                                Uri uri = Uri.fromFile(new File(targetPath));
+                                Uri uri = Uri.fromFile(new File(compressPath));
                                 intent.setData(uri);
                                 sendBroadcast(intent);
                                 progressDialogUtil.onDismiss();
@@ -1200,99 +1279,13 @@ public class VideoEditActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 Toast.makeText(getBaseContext(), "已取消", Toast.LENGTH_SHORT).show();
+                                progressDialogUtil.deleteFile(compressPath);
                             }
                         });
                     }
                 });
             }
         }).start();
-    }
-
-    // 这里设为静态内部类，防止内存泄露
-    public class MyFFmpegSubscriber extends FFmpegCMDUtil.OnActionListener {
-
-        private WeakReference<AppCompatActivity> mWeakReference;
-
-        public MyFFmpegSubscriber(AppCompatActivity appCompatActivity) {
-            mWeakReference = new WeakReference<>(appCompatActivity);
-        }
-
-        @Override
-        public void start() {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    progressDialogUtil.openProgressDialog(targetPath);
-                }
-            });
-        }
-
-        @Override
-        public void progress(final int secs, final long progressTime) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    //progressTime 可以在结合视频总时长去计算合适的进度值
-                    progressDialogUtil.setProgressDialog(secs, progressTime, duration);
-                }
-            });
-        }
-
-        @Override
-        public void fail(final int code, final String message) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    final AppCompatActivity appCompatActivity = mWeakReference.get();
-                    if (appCompatActivity != null) {
-                        progressDialogUtil.cancelProgressDialog("出错了 onError：" + code + " " + message);
-                    }
-                }
-            });
-        }
-
-        @Override
-        public void success() {//刷新媒体库
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-                    Uri uri = Uri.fromFile(new File(targetPath));
-                    intent.setData(uri);
-                    sendBroadcast(intent);
-                    final AppCompatActivity appCompatActivity = mWeakReference.get();
-                    if (appCompatActivity != null) {
-                        progressDialogUtil.onDismiss();
-                        videoView.stopPlayback();
-                        videoPath = targetPath;
-                        videoView.setVideoPath(videoPath);
-                        if (mListener != null) {
-                            mListener.cutFinish(targetPath, (long) duration);
-                        }
-                        boolean isPreview = true;
-                        if (mListener != null) {
-                            isPreview = mListener.isPreview();
-                            if (!isPreview) {
-                                finish();
-                            }
-                        }
-                        if (isPreview) {
-                            VideoPreviewActivity.open(getBaseContext(), targetPath);
-                        }
-                    }
-                }
-            });
-        }
-
-        @Override
-        public void cancel() {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(getBaseContext(), "已取消", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
     }
 
 }

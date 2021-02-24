@@ -81,16 +81,20 @@ public class ProgressDialogUtil {
         }
     }
 
+    public void setProgressDialog(int progress, long progressTime, float duration) {
+        setProgressDialog("", progress, progressTime, duration);
+    }
+
     /**
      * 设置进度条
      */
-    public void setProgressDialog(int progress, long progressTime, float duration) {
+    public void setProgressDialog(String desc, int progress, long progressTime, float duration) {
         Log.i("RxTAG", "progress: " + progress + ", progressTime: " + progressTime + ", ---: " + (int) ((double) progressTime / 1000000 / 10 * 100f));
         if (mProgressDialog != null) {
             mProgressDialog.setProgress((int) ((double) progressTime / 1000000 / duration * 100f));
             //progressTime 可以在结合视频总时长去计算合适的进度值
             double time = (double) progressTime / 1000000;
-            mProgressDialog.setMessage("已处理" + String.format("%.2f", time) + "秒");
+            mProgressDialog.setMessage(desc + "已处理" + String.format("%.2f", time) + "秒");
         }
     }
 
