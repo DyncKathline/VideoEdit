@@ -150,7 +150,8 @@ public class MainActivity extends AppCompatActivity {
 
                 //[ffmpeg, -y, -c:v, h264_mediacodec, -i, /storage/emulated/0/DCIM/Camera/VID_20201207_223556.mp4, -preset, superfast, -b:v, 4000k, -s, 1920x1080, -r, 30, /storage/emulated/0/Movies/2020-12-23-17-03-59.mp4]
 
-                FMediaMetadata fMediaMetadata = FFmpegCMDUtil.readAVInfo("/storage/emulated/0/DCIM/ScreenRecorder/asd.mp4");
+                FMediaMetadata fMediaMetadata = FFmpegCMDUtil.readAVInfo("/storage/emulated/0/DCIM/ScreenRecorder/ab.mp4");
+                Log.i("kath--", fMediaMetadata.toString());
 
                 FFmpegCommandList cmdlist = new FFmpegCommandList();
                 cmdlist.append("-i");

@@ -248,6 +248,8 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_readAVInfo(JNIEnv *env, jclass clazz, jstri
     int _rotation = 0;
     const char* _videoCodec;
     const char* _audioCodec;
+    float _video_bit_rate = 0;
+    float _audio_bit_rate = 0;
     if (videostream) {
         LOGD("视频流信息(%s):\n", av_get_media_type_string(videostream->codecpar->codec_type));
         LOGD("\tStream #%d\n", videoStreamIdx);
@@ -284,6 +286,7 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_readAVInfo(JNIEnv *env, jclass clazz, jstri
         LOGD("\t每个像素点的比特数 : %d bits\n", videostream->codecpar->bits_per_raw_sample);
         LOGD("\t每个像素点编码比特数 : %d bits\n",
              videostream->codecpar->bits_per_coded_sample); //YUV三个分量每个分量是8,即24
+        _video_bit_rate = videostream->codecpar->bit_rate / 1000.0;
         LOGD("\t视频流比特率 : %f kbps\n", videostream->codecpar->bit_rate / 1000.0);
         LOGD("\t基准时间 : %d / %d = %f \n", videostream->time_base.num, videostream->time_base.den,
              av_q2d(videostream->time_base));
@@ -319,6 +322,7 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_readAVInfo(JNIEnv *env, jclass clazz, jstri
         LOGD("\t编码格式 %s (%s,%s)\n", avcodocname, profilestring, codec_fourcc);
         LOGD("\t音频采样率 : %d Hz\n", audiostream->codecpar->sample_rate);
         LOGD("\t音频声道数 : %d \n", audiostream->codecpar->channels);
+        _audio_bit_rate = audiostream->codecpar->bit_rate / 1000.0;
         LOGD("\t音频流比特率 : %f kbps\n", audiostream->codecpar->bit_rate / 1000.0);
         double s = audiostream->duration * av_q2d(audiostream->time_base);
         int64_t tbits = audiostream->codecpar->bit_rate * s;
@@ -337,6 +341,8 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_readAVInfo(JNIEnv *env, jclass clazz, jstri
     jfieldID rotate = (*env)->GetFieldID(env, myClass, "rotate", "I");
     jfieldID frameRate = (*env)->GetFieldID(env, myClass, "frameRate", "F");
     jfieldID bitrate = (*env)->GetFieldID(env, myClass, "bitrate", "F");
+    jfieldID videoBitrate = (*env)->GetFieldID(env, myClass, "videoBitrate", "F");
+    jfieldID audioBitrate = (*env)->GetFieldID(env, myClass, "audioBitrate", "F");
     jfieldID videoCodec = (*env)->GetFieldID(env, myClass, "videoCodec", "Ljava/lang/String;");
     jfieldID audioCodec = (*env)->GetFieldID(env, myClass, "audioCodec", "Ljava/lang/String;");
 
@@ -344,6 +350,8 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_readAVInfo(JNIEnv *env, jclass clazz, jstri
     (*env)->SetIntField(env, fMediaMetadata, videoHeight, _height);
     (*env)->SetIntField(env, fMediaMetadata, rotate, _rotation);
     (*env)->SetFloatField(env, fMediaMetadata, bitrate, _bitRate);
+    (*env)->SetFloatField(env, fMediaMetadata, videoBitrate, _video_bit_rate);
+    (*env)->SetFloatField(env, fMediaMetadata, audioBitrate, _audio_bit_rate);
     (*env)->SetFloatField(env, fMediaMetadata, frameRate, _frameRate);
     (*env)->SetLongField(env, fMediaMetadata, duration, _duration);
     (*env)->SetDoubleField(env, fMediaMetadata, fileSize, _fileSize);

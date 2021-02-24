@@ -8,6 +8,8 @@ public class FMediaMetadata {
     int rotate;
     float frameRate;
     float bitrate;
+    float videoBitrate;
+    float audioBitrate;
     String videoCodec;
     String audioCodec;
 
@@ -39,11 +41,44 @@ public class FMediaMetadata {
         return bitrate;
     }
 
+    public float getVideoBitrate() {
+        return videoBitrate;
+    }
+
+    public void setVideoBitrate(float videoBitrate) {
+        this.videoBitrate = videoBitrate;
+    }
+
+    public float getAudioBitrate() {
+        return audioBitrate;
+    }
+
+    public void setAudioBitrate(float audioBitrate) {
+        this.audioBitrate = audioBitrate;
+    }
+
     public String getVideoCodec() {
         return videoCodec;
     }
 
     public String getAudioCodec() {
         return audioCodec;
+    }
+
+    @Override
+    public String toString() {
+        return "FMediaMetadata{" +
+                "videoWidth=" + videoWidth +
+                ", videoHeight=" + videoHeight +
+                ", duration=" + duration +
+                ", fileSize=" + fileSize +
+                ", rotate=" + rotate +
+                ", frameRate=" + frameRate +
+                ", bitrate=" + bitrate +
+                ", videoBitrate=" + videoBitrate +
+                ", audioBitrate=" + audioBitrate +
+                ", videoCodec='" + videoCodec + '\'' +
+                ", audioCodec='" + audioCodec + '\'' +
+                '}';
     }
 }
