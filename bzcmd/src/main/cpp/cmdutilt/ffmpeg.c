@@ -1807,10 +1807,6 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
         if (is_last_report)
             nb_frames_drop += ost->last_dropped;
     }
-    if(pts < 0) {
-        return;
-    }
-
     secs = FFABS(pts) / AV_TIME_BASE;
     us = FFABS(pts) % AV_TIME_BASE;
     mins = secs / 60;
@@ -1834,15 +1830,10 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
            hours_sign, hours, mins, secs, (100 * us) / AV_TIME_BASE);
 
     //回调处理
-//    enum AVMediaType mediaType;
-//    if (ost->hasVideoStream) {
-//        mediaType = AVMEDIA_TYPE_VIDEO;
-//    } else {
-//        mediaType = AVMEDIA_TYPE_AUDIO;
-//    }
-//    av_log(NULL, AV_LOG_ERROR, "pts: %d, secs: %d, us: %d\n", pts, secs, us);
-    if (NULL != ost->st && NULL != ost->progressCallBack) {
-        ost->progressCallBack(ost->callBackHandle, secs, pts);
+    if(pts >= 0 && pts != AV_NOPTS_VALUE) {
+        if (NULL != ost->st && NULL != ost->progressCallBack) {
+            ost->progressCallBack(ost->callBackHandle, secs, pts);
+        }
     }
     //回调处理结束
 
@@ -4755,7 +4746,7 @@ static int transcode_step(void) {
 /*
  * The following code is the main loop of the file converter
  */
-static int transcode(int64_t callBackHandle, void (*progressCallBack)(int64_t, int, float)) {
+static int transcode(int64_t callBackHandle, void (*progressCallBack)(int64_t, int, long long)) {
     int ret, i, w;
     AVFormatContext *os;
     OutputStream *ost;
@@ -4984,7 +4975,7 @@ static void log_callback_null(void *ptr, int level, const char *fmt, va_list vl)
 }
 
 int exe_ffmpeg_cmd(int argc, char **argv,
-                   int64_t handle, void (*progressCallBack)(int64_t, int, long)) {
+                   int64_t handle, void (*progressCallBack)(int64_t, int, long long)) {
     int i, ret;
     BenchmarkTimeStamps ti;
     request_cancel_exe_ffmpeg_cmd = 0;

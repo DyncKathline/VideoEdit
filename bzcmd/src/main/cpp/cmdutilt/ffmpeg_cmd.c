@@ -39,12 +39,12 @@ void log_call_back(void *ptr, int level, const char *fmt, va_list vl) {
             LOGE("%s", line);
             free(line);
         } else {
-//            __android_log_vprint(ANDROID_LOG_VERBOSE, TAG, fmt, vl);
+            __android_log_vprint(ANDROID_LOG_VERBOSE, TAG, fmt, vl);
         }
     }
 }
 
-void progressCallBack(int64_t handle, int secs, long progress) {
+void progressCallBack(int64_t handle, int secs, long long progress) {
     if (handle != 0) {
         struct CallBackInfo *onActionListener = (struct CallBackInfo *) (handle);
         JNIEnv *env = onActionListener->env;

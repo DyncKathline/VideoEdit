@@ -86,8 +86,8 @@ public class MainActivity extends AppCompatActivity {
                 cmdlist.append("-t");
                 cmdlist.append(10 + "");
                 cmdlist.append("-i");
-//                cmdlist.append("/storage/emulated/0/qqmusic/mv/贝瓦儿歌 - 拔萝卜.mp4");
-                cmdlist.append("/storage/emulated/0/DCIM/Camera/VID_20201216_215945.mp4");
+                cmdlist.append("/storage/emulated/0/DCIM/Camera/贝瓦儿歌 - 拔萝卜.mp4");
+//                cmdlist.append("/storage/emulated/0/DCIM/Camera/儿歌-小手拍拍.mp4");
                 cmdlist.append("-c:v");
                 cmdlist.append("libx264");
                 cmdlist.append("-c:a");
@@ -96,17 +96,17 @@ public class MainActivity extends AppCompatActivity {
                 cmdlist.append("experimental");
                 cmdlist.append("-b");
                 cmdlist.append("500k");
-                cmdlist.append("/storage/emulated/0/avEditor/out2.mp4");
+                cmdlist.append("/storage/emulated/0/DCIM/out2.mp4");
                 String[] commands = cmdlist.build(true);
                 int ret = FFmpegCMDUtil.executeFFmpegCommand(commands, new FFmpegCMDUtil.OnActionListener() {
                     @Override
-                    public void progress(int secs, final long progress) {
+                    public void progress(int secs, final long progressTime) {
                         //progressTime 可以在结合视频总时长去计算合适的进度值
-                        Log.d(TAG, "executeFFmpegCommand secs= " + secs + ", progress=" + progress / 1000000f);
+                        Log.i("executeFFmpegCommand", "progress: " + secs + ", progressTime: " + progressTime + ", ---: " + (int) ((double) progressTime / 1000f));
                         tv_info.post(new Runnable() {
                             @Override
                             public void run() {
-                                tv_info.setText("progress=" + progress / 1000000f);
+                                tv_info.setText("progress=" + (progressTime / 1000f));
                             }
                         });
                     }
@@ -140,6 +140,7 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
+    private int mMaxResolution = 720;
     public void compress(View view) {
         new Thread(new Runnable() {
             @Override
@@ -148,45 +149,43 @@ public class MainActivity extends AppCompatActivity {
                 String cmd = "ffmpeg -y -i /sdcard/bzmedia/VID_029.mp4 /sdcard/bzmedia/out_" + System.nanoTime() + ".mp4";
                 cmd = "ffmpeg -y -ss 9.08 -t 9.0 -i /storage/emulated/0/qqmusic/mv/儿歌-小手拍拍.mp4 -c:v libx264 -c:a aac -strict experimental -b 500k /storage/emulated/0/avEditor/out2.mp4";
 
-                //[ffmpeg, -y, -c:v, h264_mediacodec, -i, /storage/emulated/0/DCIM/Camera/VID_20201207_223556.mp4, -preset, superfast, -b:v, 4000k, -s, 1920x1080, -r, 30, /storage/emulated/0/Movies/2020-12-23-17-03-59.mp4]
+//                "ffmpeg -y -i /storage/emulated/0/DCIM/Camera/lv_0_20210303110525.mp4 -c:v libx264 -preset superfast -b:v 1000k -filter:v scale=-1:720 -r 30 /storage/emulated/0/DCIM/Camera//VIDEO_compress_20210303_154631.mp4";
 
-                FMediaMetadata fMediaMetadata = FFmpegCMDUtil.readAVInfo("/storage/emulated/0/DCIM/ScreenRecorder/ab.mp4");
+                FMediaMetadata fMediaMetadata = FFmpegCMDUtil.readAVInfo("/storage/emulated/0/DCIM/Camera/lv.mp4");
                 Log.i("kath--", fMediaMetadata.toString());
 
                 FFmpegCommandList cmdlist = new FFmpegCommandList();
                 cmdlist.append("-i");
 //                cmdlist.append("/storage/emulated/0/qqmusic/mv/贝瓦儿歌 - 拔萝卜.mp4");
-                cmdlist.append("/storage/emulated/0/DCIM/ScreenRecorder/asd.mp4");
+                cmdlist.append("/storage/emulated/0/DCIM/Camera/lv.mp4");
                 cmdlist.append("-c:v");
                 cmdlist.append("libx264");
                 cmdlist.append("-preset");
                 cmdlist.append("superfast");
-//                cmdlist.append("-crf");
-//                cmdlist.append("25");
                 cmdlist.append("-b:v");
-                cmdlist.append("3000k");
-                cmdlist.append("-filter:v");
+                cmdlist.append("1000k");
                 int videoWidth = fMediaMetadata.getVideoWidth();
                 int videoHeight = fMediaMetadata.getVideoHeight();
-                if (videoWidth > 1920 || videoHeight > 1080) {
+                if (Math.min(videoWidth, videoHeight) > mMaxResolution) {
+                    cmdlist.append("-filter:v");
                     int rotate = fMediaMetadata.getRotate();
                     if(videoWidth > videoHeight) {
                         if(rotate == 0 || rotate == 180) {
-                            cmdlist.append("scale=-1:720");//竖屏
+                            cmdlist.append("scale=-2:720");//竖屏
                         }else if(rotate == 90 || rotate == 270) {
-                            cmdlist.append("scale=720:-1");//横屏
+                            cmdlist.append("scale=720:-2");//横屏
                         }
                     }else {
                         if(rotate == 0 || rotate == 180) {
-                            cmdlist.append("scale=720:-1");//横屏
+                            cmdlist.append("scale=720:-2");//横屏
                         }else if(rotate == 90 || rotate == 270) {
-                            cmdlist.append("scale=-1:720");//竖屏
+                            cmdlist.append("scale=-2:720");//竖屏
                         }
                     }
                 }
                 cmdlist.append("-r");
                 cmdlist.append("30");
-                cmdlist.append("/storage/emulated/0/avEditor/out2.mp4");
+                cmdlist.append("/storage/emulated/0/DCIM/out2.mp4");
                 String[] commands = cmdlist.build(true);
                 int ret = FFmpegCMDUtil.executeFFmpegCommand(commands, new FFmpegCMDUtil.OnActionListener() {
                     @Override
@@ -195,13 +194,13 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void progress(int secs, final long progress) {
+                    public void progress(int secs, final long progressTime) {
                         //progressTime 可以在结合视频总时长去计算合适的进度值
-                        Log.d(TAG, "executeFFmpegCommand secs= " + secs + ", progress=" + progress / 1000000f);
+                        Log.i("executeFFmpegCommand", "progress: " + secs + ", progressTime: " + progressTime + ", ---: " + (int) ((double) progressTime / 1000f));
                         tv_info.post(new Runnable() {
                             @Override
                             public void run() {
-                                tv_info.setText("progress=" + progress / 1000000f);
+                                tv_info.setText("progress=" + (progressTime / 1000f));
                             }
                         });
                     }
