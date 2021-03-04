@@ -1184,15 +1184,15 @@ public class VideoEditActivity extends AppCompatActivity {
             int rotate = fMediaMetadata.getRotate();
             if(videoWidth > videoHeight) {
                 if(rotate == 0 || rotate == 180) {
-                    cmdlist.append("scale=-1:720");//竖屏
+                    cmdlist.append("scale=-2:720");//竖屏
                 }else if(rotate == 90 || rotate == 270) {
-                    cmdlist.append("scale=720:-1");//横屏
+                    cmdlist.append("scale=720:-2");//横屏
                 }
             }else {
                 if(rotate == 0 || rotate == 180) {
-                    cmdlist.append("scale=720:-1");//横屏
+                    cmdlist.append("scale=720:-2");//横屏
                 }else if(rotate == 90 || rotate == 270) {
-                    cmdlist.append("scale=-1:720");//竖屏
+                    cmdlist.append("scale=-2:720");//竖屏
                 }
             }
         }
