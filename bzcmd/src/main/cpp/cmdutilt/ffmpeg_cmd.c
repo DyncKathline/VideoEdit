@@ -1,5 +1,6 @@
 #include <string.h>
 #include <jni.h>
+#include <stdbool.h>
 #include "ffmpeg.h"
 #include <android/log.h>
 #include <libavutil/log.h>
@@ -10,7 +11,7 @@
 //保证同时只能一个线程执行
 static pthread_mutex_t cmdLock;
 static int cmdLockHasInit = 0;
-
+bool hasRegistered = false;
 typedef struct CallBackInfo {
     JNIEnv *env;
     jobject obj;
@@ -29,17 +30,10 @@ void log_call_back(void *ptr, int level, const char *fmt, va_list vl) {
     } else {
         if (level <= 16) {//ffmpeg 来的日志
             __android_log_vprint(ANDROID_LOG_ERROR, TAG, fmt, vl);
-            va_list vl2;
-            char *line = malloc(128 * sizeof(char));
-            static int print_prefix = 1;
-            va_copy(vl2, vl);
-            av_log_format_line(ptr, level, fmt, vl2, line, 128, &print_prefix);
-            va_end(vl2);
-            line[127] = '\\0';
-            LOGE("%s", line);
-            free(line);
+        } else if (level <= 24) {
+            __android_log_vprint(ANDROID_LOG_WARN, TAG, fmt, vl);
         } else {
-            __android_log_vprint(ANDROID_LOG_VERBOSE, TAG, fmt, vl);
+//            __android_log_vprint(ANDROID_LOG_VERBOSE, TAG, fmt, vl);
         }
     }
 }
@@ -55,15 +49,11 @@ void progressCallBack(int64_t handle, int secs, long long progress) {
 
 JNIEXPORT jint JNICALL
 Java_com_luoye_bzmedia_FFmpegCMDUtil_executeFFmpegCommand(JNIEnv *env,
-                                                          jclass type,
-                                                          jobjectArray stringArray,
-                                                          jobject actionCallBack) {
-    if (!cmdLockHasInit) {
-        pthread_mutex_init(&cmdLock, NULL);//初始化
-        cmdLockHasInit = 1;
-    }
-    pthread_mutex_lock(&cmdLock);
-
+                                                                jclass type,
+                                                                jobjectArray stringArray,
+                                                                jobject actionCallBack,
+                                                                jlong totalTime) {
+    int ret = 0;
     int cmdNum = 0;
     char **argv = NULL;//命令集 二维指针
     jstring *tempArray = NULL;
@@ -81,7 +71,23 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_executeFFmpegCommand(JNIEnv *env,
 
     }
 
-    int ret = 0;
+    if (NULL == argv) {
+        av_log(NULL, AV_LOG_ERROR, "NULL==command");
+        return -1;
+    }
+    if (!hasRegistered) {
+        av_register_all();
+        avcodec_register_all();
+        avfilter_register_all();
+        avformat_network_init();
+        hasRegistered = true;
+    }
+    if (!cmdLockHasInit) {
+        pthread_mutex_init(&cmdLock, NULL);//初始化
+        cmdLockHasInit = 1;
+    }
+    pthread_mutex_lock(&cmdLock);
+
     if (NULL != actionCallBack) {
         jclass actionClass = (*env)->GetObjectClass(env, actionCallBack);
         jmethodID progressMID = (*env)->GetMethodID(env, actionClass, "progress", "(IJ)V");
@@ -96,11 +102,10 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_executeFFmpegCommand(JNIEnv *env,
         onActionListener.methodID = progressMID;
 
         (*env)->CallVoidMethod(env, actionCallBack, startMID);
-        ret = exe_ffmpeg_cmd(cmdNum, argv, (int64_t) (&onActionListener), progressCallBack);
-//        av_log(NULL, AV_LOG_ERROR, "exe_ffmpeg_cmd ret=%d\n", ret);
-        LOGD("exe_ffmpeg_cmd ret=%d\n", ret);
-        if (ret < 0) {//这里返回错误码可以在cpp\cmdutilt\ffmpeg_opt.c中的ffmpeg_parse_options方法中查看
-            jstring error = "";
+        ret = exe_ffmpeg_cmd(cmdNum, argv, (int64_t) (&onActionListener), progressCallBack, totalTime);
+
+        if (ret < 0) {
+            jstring error = "unknown";
             if(ret == -100) {
                 error = "Error splitting the argument list: ";
             } else if(ret == -101) {
@@ -122,9 +127,8 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_executeFFmpegCommand(JNIEnv *env,
         }
         (*env)->DeleteLocalRef(env, actionClass);
     } else {
-        ret = exe_ffmpeg_cmd(0, argv, 0, NULL);
+        ret = exe_ffmpeg_cmd(0, argv, NULL, progressCallBack, -1);
     }
-
     free(tempArray);
     pthread_mutex_unlock(&cmdLock);
     return ret;
@@ -143,6 +147,46 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_showLog(JNIEnv *env, jclass clazz, jboolean
 JNIEXPORT jint JNICALL
 Java_com_luoye_bzmedia_FFmpegCMDUtil_cancelExecuteFFmpegCommand(JNIEnv *env, jclass clazz) {
     return cancel_exe_ffmpeg_cmd();
+}
+
+JNIEXPORT jlong JNICALL
+Java_com_luoye_bzmedia_FFmpegCMDUtil_getMediaDuration(JNIEnv *env, jclass clazz,
+                                                            jstring media_path) {
+    if (NULL == media_path) {
+        return -1;
+    }
+    if (!hasRegistered) {
+        av_register_all();
+        avcodec_register_all();
+        avfilter_register_all();
+        avformat_network_init();
+        hasRegistered = true;
+    }
+    const char *mediaPath = (*env)->GetStringUTFChars(env, media_path, 0);
+    AVFormatContext *in_fmt_ctx = NULL;
+    int ret = 0;
+    if ((ret = avformat_open_input(&in_fmt_ctx, mediaPath, NULL, NULL)) < 0) {
+        av_log(NULL, AV_LOG_ERROR, "Cannot open input file mediaPath=%s", mediaPath);
+        return ret;
+    }
+    if ((ret = avformat_find_stream_info(in_fmt_ctx, NULL)) < 0) {
+        av_log(NULL, AV_LOG_ERROR, "Cannot find stream information\n");
+        return ret;
+    }
+    int64_t videoDuration = 0;
+    for (int i = 0; i < in_fmt_ctx->nb_streams; i++) {
+        AVStream *stream;
+        stream = in_fmt_ctx->streams[i];
+        int64_t temp = stream->duration * 1000 * stream->time_base.num /
+                       stream->time_base.den;
+        if (temp > videoDuration)
+            videoDuration = temp;
+    }
+    if (NULL != in_fmt_ctx)
+        avformat_close_input(&in_fmt_ctx);
+
+    (*env)->ReleaseStringUTFChars(env, media_path, mediaPath);
+    return videoDuration;
 }
 
 char* BytesToSize(double Bytes) {
@@ -172,7 +216,7 @@ char* BytesToSize(double Bytes) {
 }
 
 JNIEXPORT jobject JNICALL
-Java_com_luoye_bzmedia_FFmpegCMDUtil_readAVInfo(JNIEnv *env, jclass clazz, jstring _path) {
+Java_com_luoye_bzmedia_FFmpegCMDUtil_getMediaInfo(JNIEnv *env, jclass clazz, jstring _path) {
     const char *path = (*env)->GetStringUTFChars(env, _path, JNI_FALSE);
     AVFormatContext *pfmtCxt = NULL;
 
@@ -359,3 +403,5 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_readAVInfo(JNIEnv *env, jclass clazz, jstri
     (*env)->SetObjectField(env, fMediaMetadata, audioCodec, (*env)->NewStringUTF(env, _audioCodec));
     return fMediaMetadata;
 }
+
+

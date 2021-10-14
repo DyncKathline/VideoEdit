@@ -86,8 +86,9 @@ public class MainActivity extends AppCompatActivity {
                 cmdlist.append("-t");
                 cmdlist.append(10 + "");
                 cmdlist.append("-i");
-                cmdlist.append("/storage/emulated/0/DCIM/Camera/贝瓦儿歌 - 拔萝卜.mp4");
+//        cmdlist.append("/storage/emulated/0/DCIM/ScreenRecorder/Screenrecorder-2021-10-13-17-27-01-249.mp4");
 //                cmdlist.append("/storage/emulated/0/DCIM/Camera/儿歌-小手拍拍.mp4");
+                cmdlist.append("/storage/emulated/0/Download/vidoe01.mp4");
                 cmdlist.append("-c:v");
                 cmdlist.append("libx264");
                 cmdlist.append("-c:a");
@@ -100,13 +101,18 @@ public class MainActivity extends AppCompatActivity {
                 String[] commands = cmdlist.build(true);
                 int ret = FFmpegCMDUtil.executeFFmpegCommand(commands, new FFmpegCMDUtil.OnActionListener() {
                     @Override
+                    public void start() {
+                        Log.d(TAG, "executeFFmpegCommand start");
+                    }
+                    @Override
                     public void progress(int secs, final long progressTime) {
-                        //progressTime 可以在结合视频总时长去计算合适的进度值
-                        Log.i("executeFFmpegCommand", "progress: " + secs + ", progressTime: " + progressTime + ", ---: " + (int) ((double) progressTime / 1000f));
+                        Log.i("executeFFmpegCommand", "progress: " + secs + ", progressTime: " + progressTime + ", ---: " + (int) ((double) progressTime / 1000000 / 10 * 100f));
                         tv_info.post(new Runnable() {
                             @Override
                             public void run() {
-                                tv_info.setText("progress=" + (progressTime / 1000f));
+                                //progressTime 可以在结合视频总时长去计算合适的进度值
+                                double time = (double) progressTime / 1000000;
+                                tv_info.setText("已处理" + String.format("%.2f", time) + "秒");
                             }
                         });
                     }
@@ -140,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
-    private int mMaxResolution = 720;
+    private int mMaxResolution = 2340;
     public void compress(View view) {
         new Thread(new Runnable() {
             @Override
@@ -151,13 +157,13 @@ public class MainActivity extends AppCompatActivity {
 
 //                "ffmpeg -y -i /storage/emulated/0/DCIM/Camera/lv_0_20210303110525.mp4 -c:v libx264 -preset superfast -b:v 1000k -filter:v scale=-1:720 -r 30 /storage/emulated/0/DCIM/Camera//VIDEO_compress_20210303_154631.mp4";
 
-                FMediaMetadata fMediaMetadata = FFmpegCMDUtil.readAVInfo("/storage/emulated/0/DCIM/Camera/lv.mp4");
+                FMediaMetadata fMediaMetadata = FFmpegCMDUtil.getMediaInfo("/storage/emulated/0/Download/vidoe01.mp4");
                 Log.i("kath--", fMediaMetadata.toString());
 
                 FFmpegCommandList cmdlist = new FFmpegCommandList();
                 cmdlist.append("-i");
 //                cmdlist.append("/storage/emulated/0/qqmusic/mv/贝瓦儿歌 - 拔萝卜.mp4");
-                cmdlist.append("/storage/emulated/0/DCIM/Camera/lv.mp4");
+                cmdlist.append("/storage/emulated/0/Download/vidoe01.mp4");
                 cmdlist.append("-c:v");
                 cmdlist.append("libx264");
                 cmdlist.append("-preset");
@@ -200,7 +206,9 @@ public class MainActivity extends AppCompatActivity {
                         tv_info.post(new Runnable() {
                             @Override
                             public void run() {
-                                tv_info.setText("progress=" + (progressTime / 1000f));
+                                //progressTime 可以在结合视频总时长去计算合适的进度值
+                                double time = (double) progressTime / 1000000;
+                                tv_info.setText("已处理" + String.format("%.2f", time) + "秒");
                             }
                         });
                     }

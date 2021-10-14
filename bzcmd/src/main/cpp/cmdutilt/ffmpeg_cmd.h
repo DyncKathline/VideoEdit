@@ -10,9 +10,18 @@
 
 extern "C" {
 #endif
+
 //小于0失败,>0成功
-//int executeFFmpegCommand(int64_t handle, char **, void (*progressCallBack)(int64_t, int, float));
-//void cancelExecuteFFmpegCommand();
+//int
+//executeFFmpegCommand4TotalTime(int64_t handle, const char * command,
+//                               void (*progressCallBack)(int64_t, int, long long),
+//                               int64_t totalTime);
+//
+//int executeFFmpegCommand(int64_t handle, const char *command,
+//                         void (*progressCallBack)(int64_t, int, long long));
+//
+//int cancelExecuteFFmpegCommand();
+
 #ifdef __cplusplus
 }
 #endif
