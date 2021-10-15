@@ -220,6 +220,14 @@ public class WaveformView extends View {
         mHeightsAtThisZoomLevel = null;
     }
 
+    public void setLeftOffset(int leftOffset) {
+        this.leftOffset = leftOffset;
+    }
+
+    public int getLeftOffset() {
+        return leftOffset;
+    }
+
     public boolean isInitialized() {
         return mInitialized;
     }
@@ -506,30 +514,30 @@ public class WaveformView extends View {
                     i + start < mSelectionEnd) {
 //                paint = mSelectedLinePaint;
             } else {
-                drawWaveformLine(canvas, i, 0, measuredHeight,
+                drawWaveformLine(canvas, i + leftOffset, 0, measuredHeight,
                         mUnselectedBkgndLinePaint);
             }
 
             if (i + start == mPlaybackPos) {
-                canvas.drawLine(i, 0, i, measuredHeight, mPlaybackLinePaint);
+                canvas.drawLine(i + leftOffset, 0, i + leftOffset, measuredHeight, mPlaybackLinePaint);
             }
         }
 
         // If we can see the right edge of the waveform, draw the
         // non-waveform area to the right as unselected
         for (i = width; i < measuredWidth; i++) {
-            drawWaveformLine(canvas, i, 0, measuredHeight,
+            drawWaveformLine(canvas, i + leftOffset, 0, measuredHeight,
                     mUnselectedBkgndLinePaint);
         }
 
         // Draw borders
         canvas.drawLine(
-                mSelectionStart - mOffset + 0.5f, 30,
-                mSelectionStart - mOffset + 0.5f, measuredHeight,
+                mSelectionStart - mOffset + 0.5f + leftOffset, 0,
+                mSelectionStart - mOffset + 0.5f + leftOffset, measuredHeight,
                 mBorderLinePaint);
         canvas.drawLine(
-                mSelectionEnd - mOffset + 0.5f, 0,
-                mSelectionEnd - mOffset + 0.5f, measuredHeight - 30,
+                mSelectionEnd - mOffset + 0.5f + leftOffset, 0,
+                mSelectionEnd - mOffset + 0.5f + leftOffset, measuredHeight,
                 mBorderLinePaint);
 
         // Draw timecode

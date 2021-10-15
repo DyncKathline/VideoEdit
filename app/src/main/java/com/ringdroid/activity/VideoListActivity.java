@@ -25,6 +25,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.kathline.videoedit.VideoEditActivity;
 import com.kathline.videoedit.util.ProgressDialogUtil;
@@ -46,6 +47,7 @@ import java.util.Locale;
 public class VideoListActivity extends AppCompatActivity implements VideoAdapter.OnItemClickListener {
     private static final int MSG_NOTIFY_DATA_CHANGED = 100;
 
+    private SwipeRefreshLayout mSwipeRefreshLayout;
     private RecyclerView mRecyclerView;
 
     private VideoAdapter mVideoAdapter;
@@ -71,7 +73,8 @@ public class VideoListActivity extends AppCompatActivity implements VideoAdapter
         setTitle("视频列表");
 
 
-        mRecyclerView = findViewById(R.id.recycler_view);
+        mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        mRecyclerView = findViewById(R.id.recyclerView);
         mRecyclerView.setLayoutManager(new GridLayoutManager(this, 3));
         mRecyclerView.addItemDecoration(new SpacingDecoration(this, 10, 10, true));
         mVideoAdapter = new VideoAdapter(this);
@@ -82,7 +85,19 @@ public class VideoListActivity extends AppCompatActivity implements VideoAdapter
         PermissionUtil.getInstance().with(this).requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, new PermissionUtil.PermissionListener() {
             @Override
             public void onGranted() {
-                loadData();
+                mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+                    @Override
+                    public void onRefresh() {
+                        loadData();
+                    }
+                });
+                mSwipeRefreshLayout.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mSwipeRefreshLayout.setRefreshing(true);
+                        loadData();
+                    }
+                });
             }
 
             @Override
@@ -102,6 +117,7 @@ public class VideoListActivity extends AppCompatActivity implements VideoAdapter
             @Override
             public void run() {
                 loadVideoList();
+                mSwipeRefreshLayout.setRefreshing(false);
             }
         }).start();
     }

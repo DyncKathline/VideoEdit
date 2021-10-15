@@ -164,7 +164,7 @@ public class VideoEditActivity extends AppCompatActivity {
         mMinCutTime = getIntent().getFloatExtra(VideoEditActivity.MIN_CUT_TIME, 3.0f);
         mMaxCutTime = getIntent().getFloatExtra(VideoEditActivity.MAX_CUT_TIME, 15.0f);
         mMaxResolution = getIntent().getIntExtra(VideoEditActivity.MAX_RESOLUTION, 720);
-        String filePath = Environment.getExternalStorageDirectory().getPath() + File.separator + Environment.DIRECTORY_DCIM + File.separator + "Camera" + File.separator;
+        String filePath = Environment.getExternalStorageDirectory().getPath() + File.separator + Environment.DIRECTORY_DCIM + File.separator + getPackageName();
         File parentFile = new File(filePath);
         if(!parentFile.exists()) {
             parentFile.mkdirs();
@@ -231,8 +231,6 @@ public class VideoEditActivity extends AppCompatActivity {
         cutInfo = findViewById(R.id.cut_info);
         videoView.setVideoPath(videoPath);
         addListener();
-        mHandler.postDelayed(mPlayerHandler, 100);
-        mHandler.postDelayed(mTimerRunnable, 100);
     }
 
     private MarkerView.MarkerListener markerListener = new MarkerView.MarkerListener() {
@@ -459,13 +457,15 @@ public class VideoEditActivity extends AppCompatActivity {
     };
 
     private void addListener() {
+        mHandler.postDelayed(mPlayerHandler, 100);
+        mHandler.postDelayed(mTimerRunnable, 100);
         //设置准备监听
         videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mp) {
                 notifyOnPrepared();
 
-                FMediaMetadata fMediaMetadata = FFmpegCMDUtil.readAVInfo(videoPath);
+                FMediaMetadata fMediaMetadata = FFmpegCMDUtil.getMediaInfo(videoPath);
                 int videoWidth = fMediaMetadata.getVideoWidth();
                 int videoHeight = fMediaMetadata.getVideoHeight();
 //                Log.e("kath---", "width = " + videoWidth + " height = " + videoHeight + " rotate = " + fMediaMetadata.getRotate());
@@ -684,6 +684,13 @@ public class VideoEditActivity extends AppCompatActivity {
 
         mWaveformView.setParameters(mStartPos, mEndPos, mOffset);
         mWaveformView.invalidate();
+        mWaveformView.setLeftOffset(mStartMarker.getWidth());
+        mStartMarker.post(new Runnable() {
+            @Override
+            public void run() {
+                mWaveformView.setLeftOffset(mStartMarker.getWidth());
+            }
+        });
 
         mStartMarker.setContentDescription(
                 getResources().getText(R.string.start_marker) + " " +
@@ -711,7 +718,7 @@ public class VideoEditActivity extends AppCompatActivity {
             startX = 0;
         }
 
-        int endX = mEndPos - mOffset;
+        int endX = mEndPos - mOffset + mWaveformView.getLeftOffset();
         if (endX + mEndMarker.getWidth() >= 0) {
             if (!mEndVisible) {
                 // Delay this to avoid flicker
@@ -754,7 +761,7 @@ public class VideoEditActivity extends AppCompatActivity {
             params.setMargins(
                     0,
                     20,
-                    waveformViewWidth - endX - mStartMarker.getWidth(),
+                    waveformViewWidth - endX - mEndMarker.getWidth(),
                     20);
             params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
         }
@@ -939,7 +946,7 @@ public class VideoEditActivity extends AppCompatActivity {
         int rightPro = (int) (right - left);
         int bottomPro = (int) (bottom - top);
 
-        String filePath = Environment.getExternalStorageDirectory().getPath() + File.separator + Environment.DIRECTORY_DCIM + File.separator + "Camera" + File.separator;
+        String filePath = Environment.getExternalStorageDirectory().getPath() + File.separator + Environment.DIRECTORY_DCIM + File.separator + getPackageName();
         File parentFile = new File(filePath);
         if(!parentFile.exists()) {
             parentFile.mkdirs();
@@ -1020,7 +1027,8 @@ public class VideoEditActivity extends AppCompatActivity {
                                 progressDialogUtil.onDismiss();
                                 videoView.stopPlayback();
                                 videoPath = cutPath;
-                                videoView.setVideoPath(videoPath);
+//                                videoView.setVideoPath(videoPath);
+                                loadGui();
                             }
                         });
                     }
@@ -1042,15 +1050,15 @@ public class VideoEditActivity extends AppCompatActivity {
 
     public void startClipVideo(View view) {
         progressDialogUtil = new ProgressDialogUtil(this);
-        final FMediaMetadata fMediaMetadata = FFmpegCMDUtil.readAVInfo(videoPath);
+        final FMediaMetadata fMediaMetadata = FFmpegCMDUtil.getMediaInfo(videoPath);
         int videoWidth = fMediaMetadata.getVideoWidth();
         int videoHeight = fMediaMetadata.getVideoHeight();
 //                Log.e("kath---", "width = " + videoWidth + " height = " + videoHeight + " rotate = " + fMediaMetadata.getRotate());
-        if (Math.min(videoWidth, videoHeight) > mMaxResolution) {//大于1920x1080直接裁剪会崩溃
-            needCompress = true;
-            compress.performClick();
-            return;
-        }
+//        if (Math.min(videoWidth, videoHeight) > mMaxResolution) {//大于1920x1080直接裁剪会崩溃
+//            needCompress = true;
+//            compress.performClick();
+//            return;
+//        }
 
         float startTime = Float.parseFloat(formatTime(mStartPos));
         float endTime = Float.parseFloat(formatTime(mEndPos));
@@ -1125,7 +1133,8 @@ public class VideoEditActivity extends AppCompatActivity {
                                 progressDialogUtil.onDismiss();
                                 videoView.stopPlayback();
                                 videoPath = targetPath;
-                                videoView.setVideoPath(videoPath);
+//                                videoView.setVideoPath(videoPath);
+                                loadGui();
                                 if (mListener != null) {
                                     mListener.cutFinish(targetPath, (long) duration);
                                 }
@@ -1160,8 +1169,8 @@ public class VideoEditActivity extends AppCompatActivity {
 
     public void startCompressVideo(View view) {
         progressDialogUtil = new ProgressDialogUtil(this);
-        final FMediaMetadata fMediaMetadata = FFmpegCMDUtil.readAVInfo(videoPath);
-        String filePath = Environment.getExternalStorageDirectory().getPath() + File.separator + Environment.DIRECTORY_DCIM + File.separator + "Camera" + File.separator;
+        final FMediaMetadata fMediaMetadata = FFmpegCMDUtil.getMediaInfo(videoPath);
+        String filePath = Environment.getExternalStorageDirectory().getPath() + File.separator + Environment.DIRECTORY_DCIM + File.separator + getPackageName();
         File parentFile = new File(filePath);
         if(!parentFile.exists()) {
             parentFile.mkdirs();
@@ -1253,7 +1262,8 @@ public class VideoEditActivity extends AppCompatActivity {
                                 progressDialogUtil.onDismiss();
                                 videoView.stopPlayback();
                                 videoPath = compressPath;
-                                videoView.setVideoPath(videoPath);
+//                                videoView.setVideoPath(videoPath);
+                                loadGui();
                                 if(needCompress) {
                                     needCompress = false;
                                     cut.performClick();
