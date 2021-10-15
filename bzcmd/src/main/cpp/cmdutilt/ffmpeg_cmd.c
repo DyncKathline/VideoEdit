@@ -223,7 +223,13 @@ Java_com_luoye_bzmedia_FFmpegCMDUtil_getMediaInfo(JNIEnv *env, jclass clazz, jst
     int audioStreamIdx = -1;
     int videoStreamIdx = -1;
     //初始化 libavformat和注册所有的muxers、demuxers和protocols
-    av_register_all();
+    if (!hasRegistered) {
+        av_register_all();
+        avcodec_register_all();
+        avfilter_register_all();
+        avformat_network_init();
+        hasRegistered = true;
+    }
 
     //以输入方式打开一个媒体文件,也即源文件
     int ok = avformat_open_input(&pfmtCxt, path, NULL, NULL);

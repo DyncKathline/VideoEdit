@@ -88,16 +88,17 @@ public class MainActivity extends AppCompatActivity {
                 cmdlist.append("-i");
 //        cmdlist.append("/storage/emulated/0/DCIM/ScreenRecorder/Screenrecorder-2021-10-13-17-27-01-249.mp4");
 //                cmdlist.append("/storage/emulated/0/DCIM/Camera/儿歌-小手拍拍.mp4");
-                cmdlist.append("/storage/emulated/0/Download/vidoe01.mp4");
+//                cmdlist.append("/storage/emulated/0/DCIM/CAMERA/VID_20211014_173459.mp4");
+                cmdlist.append("/storage/emulated/0/Download/4K-Chimei-inn_30p.mp4");
                 cmdlist.append("-c:v");
                 cmdlist.append("libx264");
                 cmdlist.append("-c:a");
                 cmdlist.append("aac");
                 cmdlist.append("-strict");
                 cmdlist.append("experimental");
-                cmdlist.append("-b");
-                cmdlist.append("500k");
-                cmdlist.append("/storage/emulated/0/DCIM/out2.mp4");
+                cmdlist.append("-b:v");
+                cmdlist.append("1000k");
+                cmdlist.append("/storage/emulated/0/Download/out3.mp4");
                 String[] commands = cmdlist.build(true);
                 int ret = FFmpegCMDUtil.executeFFmpegCommand(commands, new FFmpegCMDUtil.OnActionListener() {
                     @Override
