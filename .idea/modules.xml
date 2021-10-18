@@ -3,8 +3,11 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/TestVideoEdit.iml" filepath="$PROJECT_DIR$/TestVideoEdit.iml" group="TestVideoEdit" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/VideoEdit.iml" filepath="$PROJECT_DIR$/.idea/modules/VideoEdit.iml" group="VideoEdit" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/VideoEdit-app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/VideoEdit-app.iml" group="VideoEdit/app" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="TestVideoEdit/app" />
       <module fileurl="file://$PROJECT_DIR$/exoplayer/exoplayer.iml" filepath="$PROJECT_DIR$/exoplayer/exoplayer.iml" group="TestVideoEdit/exoplayer" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/videoEdit/videoEdit.iml" filepath="$PROJECT_DIR$/.idea/modules/videoEdit/videoEdit.iml" group="VideoEdit/videoEdit" />
     </modules>
   </component>
 </project>

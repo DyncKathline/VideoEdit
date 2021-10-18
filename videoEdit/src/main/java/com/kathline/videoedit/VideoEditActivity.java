@@ -717,7 +717,7 @@ public class VideoEditActivity extends AppCompatActivity {
             startX = 0;
         }
 
-        int endX = mEndPos - mOffset + mWaveformView.getLeftOffset();
+        int endX = mEndPos - mOffset + mWaveformView.getLeftOffset() + 1;
         if (endX + mEndMarker.getWidth() >= 0) {
             if (!mEndVisible) {
                 // Delay this to avoid flicker

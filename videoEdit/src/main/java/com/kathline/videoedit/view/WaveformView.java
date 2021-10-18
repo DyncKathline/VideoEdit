@@ -383,7 +383,7 @@ public class WaveformView extends View {
         // Draw waveform
         int measuredWidth = getMeasuredWidth();
         int measuredHeight = getMeasuredHeight();
-        int start = mOffset;
+        int start = mOffset - leftOffset;
         int width = mHeightsAtThisZoomLevel.length - start;
 
         if (width > measuredWidth)
@@ -514,24 +514,19 @@ public class WaveformView extends View {
                     i + start < mSelectionEnd) {
 //                paint = mSelectedLinePaint;
             } else {
-                if(i + start >= mSelectionStart) {
-                    drawWaveformLine(canvas, i + leftOffset, 0, measuredHeight,
-                            mUnselectedBkgndLinePaint);
-                }else if(i + start < mSelectionEnd) {
-                    drawWaveformLine(canvas, i, 0, measuredHeight,
-                            mUnselectedBkgndLinePaint);
-                }
+                drawWaveformLine(canvas, i, 0, measuredHeight,
+                        mUnselectedBkgndLinePaint);
             }
 
             if (i + start == mPlaybackPos) {
-                canvas.drawLine(i + leftOffset, 0, i + leftOffset, measuredHeight, mPlaybackLinePaint);
+                canvas.drawLine(i, 0, i, measuredHeight, mPlaybackLinePaint);
             }
         }
 
         // If we can see the right edge of the waveform, draw the
         // non-waveform area to the right as unselected
         for (i = width; i < measuredWidth; i++) {
-            drawWaveformLine(canvas, i + leftOffset, 0, measuredHeight,
+            drawWaveformLine(canvas, i, 0, measuredHeight,
                     mUnselectedBkgndLinePaint);
         }
 
