@@ -736,17 +736,29 @@ public class VideoEditActivity extends AppCompatActivity {
             }
             endX = 0;
         }
+
+        int waveformViewWidth = mWaveformView.getWidth();
+
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.WRAP_CONTENT,
                 RelativeLayout.LayoutParams.MATCH_PARENT);
-        params.setMargins(
-                startX,
-                20,
-                0,
-                20);
+        if (startX + mStartMarker.getWidth() < waveformViewWidth) {
+            params.setMargins(
+                    startX,
+                    20,
+                    0,
+                    20);
+            params.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+        } else {
+            params.setMargins(
+                    0,
+                    20,
+                    waveformViewWidth - startX - mStartMarker.getWidth(),
+                    20);
+            params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        }
         mStartMarker.setLayoutParams(params);
 
-        int waveformViewWidth = mWaveformView.getWidth();
         params = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.WRAP_CONTENT,
                 RelativeLayout.LayoutParams.MATCH_PARENT);

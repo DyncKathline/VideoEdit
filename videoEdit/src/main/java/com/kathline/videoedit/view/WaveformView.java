@@ -514,8 +514,13 @@ public class WaveformView extends View {
                     i + start < mSelectionEnd) {
 //                paint = mSelectedLinePaint;
             } else {
-                drawWaveformLine(canvas, i + leftOffset, 0, measuredHeight,
-                        mUnselectedBkgndLinePaint);
+                if(i + start >= mSelectionStart) {
+                    drawWaveformLine(canvas, i + leftOffset, 0, measuredHeight,
+                            mUnselectedBkgndLinePaint);
+                }else if(i + start < mSelectionEnd) {
+                    drawWaveformLine(canvas, i, 0, measuredHeight,
+                            mUnselectedBkgndLinePaint);
+                }
             }
 
             if (i + start == mPlaybackPos) {
