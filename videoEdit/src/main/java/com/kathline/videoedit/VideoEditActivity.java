@@ -682,13 +682,12 @@ public class VideoEditActivity extends AppCompatActivity {
             }
         }
 
-        mWaveformView.setParameters(mStartPos, mEndPos, mOffset);
-        mWaveformView.invalidate();
-        mWaveformView.setLeftOffset(mStartMarker.getWidth());
         mStartMarker.post(new Runnable() {
             @Override
             public void run() {
                 mWaveformView.setLeftOffset(mStartMarker.getWidth());
+                mWaveformView.setParameters(mStartPos, mEndPos, mOffset);
+                mWaveformView.invalidate();
             }
         });
 
